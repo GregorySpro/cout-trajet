@@ -1,4 +1,13 @@
-import { DEFAULT_COST_CONFIG, DEFAULT_SPEED_PROFILE, type CostConfig } from './config';
+import { isHeavyGoodsVehicle } from '@cout-trajet/shared';
+import {
+  VAT_RATE,
+  configFor,
+  defaultConsumption,
+  defaultSpeeds,
+  legalSpeedCaps,
+  mandatoryBreakMin,
+} from './categories';
+import type { CostConfig } from './config';
 import { effectiveSpeedKmh, segmentDurationMin } from './duration';
 import { segmentFuelLiters } from './fuel';
 import {
@@ -8,6 +17,7 @@ import {
   type RoadClass,
   type RoadClassBreakdown,
   type SpeedProfile,
+  type VehicleConsumption,
 } from './types';
 
 /** Arrondi au centime. */
@@ -15,11 +25,11 @@ export function roundEur(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function validate(input: EstimateInput): void {
+function validate(input: EstimateInput, vehicle: VehicleConsumption): void {
   if (!(input.fuelPriceEurPerL > 0)) {
     throw new RangeError('Le prix du carburant doit être strictement positif.');
   }
-  const { urban, rural, motorway } = input.vehicle;
+  const { urban, rural, motorway } = vehicle;
   for (const [name, value] of [
     ['urbaine', urban],
     ['extra-urbaine', rural],
@@ -51,58 +61,70 @@ function emptyBreakdown(): Record<RoadClass, RoadClassBreakdown> {
 /**
  * Estime le coût d'un trajet (carburant + péages), sa durée et une fourchette d'incertitude.
  * Fonction pure : aucune entrée/sortie, aucun accès réseau.
+ *
+ * Catégorie de véhicule (`car` par défaut) : les camions utilisent par défaut la consommation moyenne
+ * du CNR, des vitesses plafonnées à 90 km/h sur autoroute et 80 km/h sur route, et des pauses
+ * réglementaires ; `excludeVat` donne un coût hors taxes pour un professionnel.
  */
-export function estimateTrip(
-  input: EstimateInput,
-  config: CostConfig = DEFAULT_COST_CONFIG,
-): Estimate {
-  validate(input);
-  const speeds: SpeedProfile = { ...DEFAULT_SPEED_PROFILE, ...input.speeds };
+export function estimateTrip(input: EstimateInput, config?: CostConfig): Estimate {
+  const category = input.category ?? 'car';
+  const heavy = isHeavyGoodsVehicle(category);
+  const vehicle = input.vehicle ?? defaultConsumption(category);
+  if (vehicle === undefined) {
+    throw new RangeError(
+      `La consommation du véhicule est obligatoire pour la catégorie « ${category} ».`,
+    );
+  }
+  validate(input, vehicle);
+
+  const cfg = config ?? configFor(category);
+  const speeds: SpeedProfile = { ...defaultSpeeds(category), ...input.speeds };
   for (const [name, v] of Object.entries(speeds)) {
     if (!(v > 0)) throw new RangeError(`La vitesse ${name} doit être strictement positive.`);
   }
+  const caps = legalSpeedCaps(category);
 
   const byRoadClass = emptyBreakdown();
   for (const seg of input.segments) {
-    const speed = effectiveSpeedKmh(seg, speeds);
+    const speed = effectiveSpeedKmh(seg, speeds, caps);
     const bucket = byRoadClass[seg.roadClass];
     bucket.distanceKm += seg.distanceKm;
     bucket.durationMin += segmentDurationMin(seg.distanceKm, speed);
-    bucket.fuelLiters += segmentFuelLiters(
-      seg.distanceKm,
-      seg.roadClass,
-      speed,
-      input.vehicle,
-      config,
-    );
+    bucket.fuelLiters += segmentFuelLiters(seg.distanceKm, seg.roadClass, speed, vehicle, cfg);
   }
 
   let distanceKm = 0;
-  let durationMin = 0;
+  let drivingMin = 0;
   let fuelLiters = 0;
   for (const rc of ROAD_CLASSES) {
     const b = byRoadClass[rc];
     distanceKm += b.distanceKm;
-    durationMin += b.durationMin;
+    drivingMin += b.durationMin;
     fuelLiters += b.fuelLiters;
   }
+  const breaksMin = (input.includeBreaks ?? heavy) ? mandatoryBreakMin(drivingMin) : 0;
 
-  const fuelCost = fuelLiters * input.fuelPriceEurPerL;
-  const tolls = input.tolls ?? [];
+  // Hors taxes : carburant et péages (grilles TTC à 20 %) divisés par 1,2.
+  const priceDivisor = input.excludeVat === true ? 1 + VAT_RATE : 1;
+  const fuelCost = (fuelLiters * input.fuelPriceEurPerL) / priceDivisor;
+  const tolls = (input.tolls ?? []).map((t) => ({ ...t, amountEur: t.amountEur / priceDivisor }));
   const tollCost = tolls.reduce((sum, t) => sum + t.amountEur, 0);
   const total = fuelCost + tollCost;
 
   const margin =
-    fuelCost * config.fuelUncertainty +
+    fuelCost * cfg.fuelUncertainty +
     tolls.reduce(
-      (sum, t) =>
-        sum + (t.source === 'official' ? 0 : t.amountEur * config.tollEstimateUncertainty),
+      (sum, t) => sum + (t.source === 'official' ? 0 : t.amountEur * cfg.tollEstimateUncertainty),
       0,
     );
 
   return {
+    category,
     distanceKm: roundEur(distanceKm),
-    durationMin: Math.round(durationMin),
+    durationMin: Math.round(drivingMin + breaksMin),
+    drivingMin: Math.round(drivingMin),
+    breaksMin,
+    excludesVat: input.excludeVat === true,
     fuelLiters: roundEur(fuelLiters),
     fuelCostEur: roundEur(fuelCost),
     tollCostEur: roundEur(tollCost),

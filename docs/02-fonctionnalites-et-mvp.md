@@ -25,6 +25,9 @@
 | BF-19 | Coût par passager / partage de frais covoiturage | Could | V2 |
 | BF-20 | Partager un trajet par lien public | Could | V2 |
 | BF-21 | Coûts annexes : usure, pneus, amortissement (barème kilométrique) | Could | V2 |
+| BF-24 | Choisir la catégorie de véhicule (voiture, utilitaire, camping-car, camion porteur, ensemble articulé, moto) ; classe de péage déduite ou saisie (hauteur, PTAC, essieux) | Should | V1 |
+| BF-25 | Camions : vitesses plafonnées (90 km/h autoroute), pauses réglementaires dans la durée, consommation moyenne par défaut modifiable, itinéraire adapté aux restrictions (hauteur, poids) | Should | V1 |
+| BF-26 | Coût hors taxes (TVA récupérable) pour les professionnels | Could | V1 |
 | BF-22 | Départ à une heure donnée / jours fériés (trafic estimé) | Won't | — |
 | BF-23 | Navigation guidée, trafic temps réel, app native | Won't | — |
 

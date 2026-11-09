@@ -5,3 +5,12 @@ export type VehicleClass = (typeof VEHICLE_CLASSES)[number];
 export function isVehicleClass(value: number): value is VehicleClass {
   return (VEHICLE_CLASSES as readonly number[]).includes(value);
 }
+
+export {
+  DEFAULT_TOLL_CLASS,
+  VEHICLE_CATEGORIES,
+  isHeavyGoodsVehicle,
+  tollClassFor,
+  type VehicleCategory,
+  type VehicleDimensions,
+} from './vehicle-categories';

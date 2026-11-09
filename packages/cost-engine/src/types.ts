@@ -1,3 +1,5 @@
+import type { VehicleCategory } from '@cout-trajet/shared';
+
 /** Type de route d'un tronçon d'itinéraire. */
 export type RoadClass = 'urban' | 'rural' | 'motorway';
 
@@ -41,10 +43,20 @@ export interface TollCharge {
 
 export interface EstimateInput {
   segments: readonly RouteSegment[];
-  vehicle: VehicleConsumption;
+  /** Catégorie du véhicule ; `car` par défaut. */
+  category?: VehicleCategory;
+  /**
+   * Consommation du véhicule. Facultative pour les camions (moyenne CNR par défaut), obligatoire
+   * pour les autres catégories.
+   */
+  vehicle?: VehicleConsumption;
   fuelPriceEurPerL: number;
   speeds?: Partial<SpeedProfile>;
   tolls?: readonly TollCharge[];
+  /** Ajoute les pauses réglementaires à la durée. Par défaut : vrai pour les camions, faux sinon. */
+  includeBreaks?: boolean;
+  /** Calcul hors taxes (carburant et péages divisés par 1,2) pour un professionnel qui récupère la TVA. */
+  excludeVat?: boolean;
 }
 
 export interface RoadClassBreakdown {
@@ -54,8 +66,16 @@ export interface RoadClassBreakdown {
 }
 
 export interface Estimate {
+  category: VehicleCategory;
   distanceKm: number;
+  /** Durée totale : conduite + pauses réglementaires éventuelles. */
   durationMin: number;
+  /** Durée de conduite seule. */
+  drivingMin: number;
+  /** Pauses réglementaires incluses dans `durationMin`. */
+  breaksMin: number;
+  /** Prix et montants hors taxes ? */
+  excludesVat: boolean;
   fuelLiters: number;
   fuelCostEur: number;
   tollCostEur: number;

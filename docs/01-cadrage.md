@@ -16,7 +16,8 @@ Les calculateurs d'itinéraire donnent durée et distance, rarement un **coût r
 **Inclus (MVP → V1)** : France métropolitaine, voiture thermique (essence/diesel), calcul carburant + péages, choix du véhicule, vitesse moyenne ajustable, carte interactive, comptes, trajets sauvegardés, alternatives.
 **Inclus plus tard** : routes sinueuses / dangereuses, électrique/hybride, stations-service sur le trajet, partage de trajet, covoiturage (répartition des frais).
 **Exclu définitivement** : toute fonctionnalité payante (abonnement, premium, paiement). Le site est 100 % gratuit. Publicité : possible en toute fin, mais **évitée** (préférence du porteur).
-**Exclu (Won't, pour l'instant)** : navigation guidée turn-by-turn, trafic temps réel, hors France, camions/motos/caravane, application mobile native, publicité/paiement.
+**Inclus dès la conception (décision D-017)** : plusieurs catégories de véhicules — voiture, utilitaire, camping-car, camion porteur, ensemble articulé, moto — avec la classe de péage, les vitesses et les pauses réglementaires adaptées ; coûts hors taxes pour les professionnels. Exposé dans l'interface à partir de V1.
+**Exclu (Won't, pour l'instant)** : navigation guidée turn-by-turn, trafic temps réel, hors France, application mobile native, publicité/paiement, salaires des conducteurs et coûts d'exploitation complets d'un transporteur (pneus, entretien, assurance).
 
 ## Parties prenantes
 - Porteur / décideur / développeur : l'utilisateur, seul sur le projet (confirmé 2026-11-09).

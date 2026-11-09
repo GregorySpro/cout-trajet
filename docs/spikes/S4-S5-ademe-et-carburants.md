@@ -56,8 +56,11 @@ Les valeurs min/max (équipements différents) sont moyennées. ⚠️ Les valeu
 - Script `pnpm --filter @cout-trajet/reference-data run fetch-fuel` (2 requêtes, écrit dans `data-sources/generated/`, non versionné).
 - 34 tests (extraits réels des API).
 
+## Import complet réalisé (2026-11-09, avec accord)
+`pnpm --filter @cout-trajet/reference-data run fetch-ademe` : **3 604 lignes reçues** → 3 202 éligibles (thermique et hybride non rechargeable) → **594 versions distinctes** après dédoublonnage (2 608 lignes strictement identiques sur les champs retenus : l'ADEME répertorie plusieurs lignes par version pour des variantes d'équipement). 149 modèles, 35 marques, 416 essence et 178 diesel, dont 201 hybrides non rechargeables. Consommation mixte WLTP : de 4,1 à 19,5 L/100 km, médiane 6,0. Aucune ligne au ratio autoroute/ville atypique. Fichier local `data-sources/generated/vehicles.json` (257 Ko, non versionné).
+
 ## Reste à faire
-- [ ] Import complet des véhicules ADEME (3 604 lignes ≈ quelques Mo) : à lancer après accord.
+- [x] Import complet des véhicules ADEME : fait (voir ci-dessus).
 - [ ] Charger véhicules, prix et gares dans Supabase (étape P5) et planifier la mise à jour quotidienne des prix (P4/P5).
 - [ ] Calibrer la correspondance phases WLTP → types de route avec des relevés réels.
 - [ ] Choisir quel produit proposer par défaut pour l'essence (E10 recommandé : le plus répandu).

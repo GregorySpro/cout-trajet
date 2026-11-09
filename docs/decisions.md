@@ -56,6 +56,14 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - Revoir si : ORS exige un moyen de paiement ou ne propose pas les alternatives/`tollways` sur l'instance publique.
 - **Mise à jour après test (2026-11-09)** : ORS fonctionne mais le quota observé est de **200 requêtes/24 h** (pas 2 000) ; les alternatives intégrées sont limitées à 100 km (on utilise défaut + `avoid tolls` = 2 appels par recherche) ; `tollways` marque les tronçons à péage sans donner prix ni gare. Le **cache** et le **multi-fournisseur** deviennent obligatoires dès le MVP.
 
+## D-017 — 2026-11-09 — Camions, poids lourds et autres catégories de véhicules
+- Choix : prendre en compte **plusieurs catégories** de véhicules dès la conception : voiture, utilitaire, camping-car, porteur, ensemble articulé, moto. Moteur de coût (v0.2.0) et module de péages déjà compatibles ; l'interface les expose à partir de V1 (MVP-0 reste centré sur la voiture).
+- Ce qui est pris en compte : classe de péage 1 à 5 (classification officielle des concessionnaires, déduite de la hauteur, du PTAC et du nombre d'essieux) ; camions : consommation moyenne par défaut du CNR (porteur 19 t : 25,2 L/100 km ; articulé : 30,2 L/100 km, régional 2024), vitesse plafonnée à 90 km/h sur autoroute et 80 km/h sur route, pauses réglementaires de 45 min après 4 h 30 de conduite ; calcul hors taxes.
+- Hypothèses à confirmer : limites de vitesse exactes (article R413-8), pauses (règlement 561/2006), ventilation ville/route/autoroute de la consommation des camions (×1,3 / ×1,0 / ×1,0), valeur 40 t plus récente que le CNR 2008 (34–35 L/100).
+- À prévoir côté routage (P4) : profil poids lourd d'OpenRouteService (`driving-hgv`) avec les restrictions de hauteur/poids/essieux, à tester ; interdictions de circulation (week-end, jours fériés) non couvertes.
+- Pas de base de véhicules lourds : consommation par défaut modifiable par l'utilisateur.
+- Revoir si : le routage gratuit ne gère pas les restrictions des camions, ou si les péages des camions s'écartent des grilles (modulations, abonnements professionnels).
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).

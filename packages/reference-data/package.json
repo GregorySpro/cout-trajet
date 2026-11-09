@@ -9,7 +9,8 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "fetch-fuel": "tsx scripts/fetch-fuel-prices.ts"
+    "fetch-fuel": "tsx scripts/fetch-fuel-prices.ts",
+    "fetch-ademe": "tsx scripts/fetch-ademe.ts"
   },
   "dependencies": {
     "@cout-trajet/cost-engine": "workspace:*"

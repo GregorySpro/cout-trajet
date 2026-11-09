@@ -34,7 +34,8 @@ Date : 2026-11-09. Principe : **traiter d'abord ce qui peut tout remettre en cau
 | P0 Monorepo, CI | ✅ terminé, CI verte |
 | P1 Moteur de coût | ✅ terminé (`packages/cost-engine`) ; hypothèses de consommation à calibrer |
 | P2 Données de péage | 🟡 **cœur terminé** (`packages/tolls`) : lecture des grilles APRR, Vinci (ASF, Escota, Cofiroute) et Sanef ; livre de tarifs par couple de gares (34 711 couples en local) ; détection des gares franchies (≤ 10 m) ; correspondance gares OSM ↔ grilles ; calcul des péages d'un itinéraire ; péages à l'unité (Millau saisonnier, ponts de Normandie et Tancarville) |
-| P3 Données de référence | 🟡 **code terminé** (`packages/reference-data`, voir [S4-S5](spikes/S4-S5-ademe-et-carburants.md)) : consommations ADEME (3 202 lignes éligibles sur 3 604), prix des carburants par agrégation serveur (national + 96 départements, relevé réel du 2026-11-09), prix moyen pondéré par département. **Reste** : import complet des véhicules (accord de téléchargement), chargement dans Supabase (P5) |
+| P3 Données de référence | 🟡 **code terminé** (`packages/reference-data`, voir [S4-S5](spikes/S4-S5-ademe-et-carburants.md)) : consommations ADEME importées (3 604 lignes → **594 versions** de véhicules distinctes), prix des carburants par agrégation serveur (national + 96 départements, relevé réel du 2026-11-09), prix moyen pondéré par département. **Reste** : chargement dans Supabase (P5) |
+| Camions et autres catégories (D-017) | ✅ **moteur et péages prêts** : catégories (voiture, utilitaire, camping-car, porteur, articulé, moto), classe de péage déduite de la hauteur / PTAC / essieux, camions à 90 km/h avec consommation moyenne CNR et pauses de 45 min, coût hors taxes, péages classes 1 à 5 testés sur la grille APRR et les ouvrages. **Reste** : routage poids lourd (P4), interface (V1) |
 | P2 (fin) | ⏳ reporté à plus tard : gares de frontière entre réseaux, table de correspondance des axes principaux |
 | P4–P8 | à faire |
 
