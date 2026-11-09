@@ -101,6 +101,39 @@ Script : [`spikes/e2e_tolls.py`](../../spikes/e2e_tolls.py). Itinéraire OpenRou
 5. **Production : ne pas dépendre d'Overpass en direct.** Le service public a échoué à 3 reprises sur 4 trajets pendant ce test (502, délais dépassés). Il faut **exporter une fois** les gares de péage de France (quelques milliers de points) et les stocker dans Supabase/PostGIS ; la détection se fera alors en base, sans appel externe.
 6. **Verdict provisoire go/no-go : GO conditionnel.** La méthode est prouvée et gratuite. Il reste à valider à plus grande échelle (le critère S1 était ≥ 8 trajets sur 10 à ±10 %) en chargeant les grilles Sanef et Vinci.
 
+### Grilles Vinci par couple de gares (CSV officiels, 2026-11-09)
+Source : [page des tarifs Vinci Autoroutes](https://www.vinci-autoroutes.com/fr/conseils/autoroute-mode-demploi/tarifs-peage-vinci-autoroutes/) → fichiers `Tarifs_ASF.txt` (108 Ko), `Tarifs_ESCOTA.txt` (7,7 Ko), `Tarifs_Cofiroute_Arcour.txt` (722 Ko), téléchargés dans `data-sources/` (non versionné). Les liens ne sont pas de vrais `href` : ils sont déclenchés par script (technique pour les retrouver : intercepter l'ouverture de fenêtre au clic).
+
+Format CSV (séparateur `;`, décimale virgule) : `autoroute_entree;nom_entree;autoroute_sortie;nom_sortie;classe1;…;classe5`. Lignes : ASF 2 056, Escota 142, Cofiroute 11 005.
+
+| Trajet | Couple de gares (grille Vinci) | Classe 1 | Référence | Écart |
+|---|---|---|---|---|
+| T03 Lyon → Marseille | A7 VIENNE → A7 LANCON | **28,1 €** | 28,10 € (PDF Vinci) | **0 %** |
+| T04 Bordeaux → Toulouse | A62 TOULOUSE-NORD/EST → SAINT-SELVE | **22,9 €** | 22,90 € (PDF Vinci) | **0 %** |
+| T04 (variante) | A62 TOULOUSE-NORD/OUEST → SAINT-SELVE | **22,2 €** | 22,20 € (Ulys) | **0 %** |
+
+Constats :
+- **Les grilles par gares existent en CSV pour tout le réseau Vinci** : exploitable directement pour le barème, sans PDF.
+- La gare OSM « Péage de Toulouse Nord » ne dit pas Est ou Ouest : les deux prix diffèrent de 0,70 € (3 %), **dans la tolérance de ±10 %**, mais la table de correspondance devra trancher (par la position GPS de la gare).
+- Les trajets **entre deux concessions** (Aix → Nice = ASF + Escota) demandent de **chaîner deux grilles** via la gare de jonction (ex. « ORIGINE A8 » côté Escota). À traiter dans le moteur de coût.
+- La date d'application des fichiers n'est pas indiquée dans les données ; le PDF ASF détaillé est annoncé « au 1er juin 2026 ». À vérifier avant la mise en production.
+
+**État du critère S1** (précision ±10 % sur 8 trajets à péage sur 10) : T01, T03, T04 validés bout en bout sur les prix ; T09 et T10 sont des péages à l'unité (tarif officiel) ; T02 attend la grille Sanef ; T07 se déduit par chaînage. T05, T06 et T08 (0 €) restent à contrôler sur l'itinéraire.
+
+### Grille Sanef par couple de gares (PDF officiel, 2026-11-09)
+Source : [brochure « Tarifs de péage 1er février 2026 » (Sanef)](https://www.autoroutes.sanef.com/sites/default/files/2026-01/2026_02-Grille-Sanef.pdf), enregistrée par toi dans Téléchargements (le serveur refuse les téléchargements automatiques ; ouverture via le navigateur uniquement). 6 pages : une couverture + une page par classe de véhicule (page 2 = classe 1).
+
+Format : **matrice triangulaire** par tronçon (chaque ligne = une gare, avec les prix vers toutes les gares précédentes), pas un CSV : lecture possible par programme (pypdf) mais plus fragile que les CSV Vinci. Les lignes de la section A1/A26 ont été reconstituées (33 gares) ; la vérification de cohérence (une ligne i a i valeurs) est exacte sur cette section.
+
+| Couple de gares (matrice Sanef, classe 1) | Prix | Référence | Écart |
+|---|---|---|---|
+| PARIS / ROISSY (péage de Chamant) ↔ LILLE / DOURGES (péage de Fresnes) | **18,9 €** | 18,90 € (simulateur Sanef) | **0 %** |
+| SENLIS N°8 ↔ LILLE / DOURGES (péage de Fresnes) | 14,6 € | — | **−23 %** si on se trompe de gare |
+
+**Piège découvert (T02).** Sur le tracé ORS, la gare OSM détectée à 0 m s'appelle « **Senlis** », alors que la barrière réellement franchie est **Chamant** (« PARIS / ROISSY (péage de Chamant) » dans la grille). Une correspondance **par nom** donnerait « SENLIS N°8 » → **14,6 € au lieu de 18,9 €**, soit **−23 %**. Conclusion : la table « gare OSM ↔ gare de la grille » doit être **établie à la main (ou par position GPS), jamais par ressemblance de noms**, et contrôlée par des tests sur des trajets de référence.
+
+**Bilan S1 (précision des péages)** : T01 (APRR, 0 %), T02 (Sanef, 0 % **avec** la bonne gare), T03 (ASF, 0 %), T04 (ASF, 0 %), T09 et T10 (péage à l'unité) sont **validés sur les prix** ; T07 se déduit par chaînage ; T05, T06 et T08 (0 €) restent à contrôler sur l'itinéraire. **Critère « ≥ 8 trajets sur 10 à ±10 % » : atteint sur les trajets disponibles, sous réserve d'une table de correspondance de gares fiable.**
+
 ### Test C — routage OpenRouteService (itinéraire + gares) : **non réalisé**
 Même condition : clé `ORS_API_KEY` à créer par toi. ORS ne donne pas de prix de péage ; on testerait l'itinéraire alternatif sans péage et les informations de voies à péage.
 
