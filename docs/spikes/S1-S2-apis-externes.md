@@ -33,6 +33,57 @@ Plusieurs sources gratuites derrière des **adaptateurs** (`RoutingProvider`, `T
 - [ ] Chercher les tarifs des autres concessionnaires (Vinci, Sanef, etc.) et les données travaux des autoroutes concédées.
 - [ ] Vérifier les conditions Vercel Hobby (usage personnel / non commercial) : un site gratuit sans pub semble compatible, mais des témoignages de la communauté divergent sur les cas limites.
 
+## Résultats des tests (2026-11-09)
+
+### Test A — barème « au kilomètre » (repli) sur la grille officielle APRR
+Méthode : 21 505 couples de gares de la grille APRR au 1/02/2026 (classe 1), prix comparé à `0,096 €/km × distance tarifaire`. Script local jetable (non versionné). Le calcul a été fait sur le texte extrait du PDF ; le parsing n'a pas été vérifié ligne par ligne.
+
+| Tranche de distance | €/km médian |
+|---|---|
+| 0 – 20 km | 0,098 |
+| 20 – 50 km | 0,096 |
+| 50 – 100 km | 0,094 |
+| 100 – 200 km | 0,094 |
+| 200 – 400 km | 0,098 |
+| 400 – 700 km | 0,121 (tranche suspecte, à investiguer : possible biais de parsing ou de majorations) |
+
+Pour les trajets ≥ 50 km (20 875 couples) : **erreur médiane 11 %, 90e centile 28 %, seulement 48 % des couples à ±10 %.**
+
+**Conclusion : un barème au kilomètre ne tient pas l'objectif de ±10 %.** Il ne doit servir que de repli, affiché comme « péage estimé » avec une fourchette. Le barème **par couple de gares** (APRR, Vinci…) est exact par construction ; son vrai défi est de connaître les gares franchies, donc de disposer d'un routage qui les expose (ou d'une table des gares géolocalisées).
+
+### Test B — HERE Toll Cost : **abandonné (2026-11-09)**
+L'inscription HERE exige une carte bancaire ou PayPal, incompatible avec le budget 0 € strict (voir D-015 dans `decisions.md`). Alternative à tester : détection des gares de péage sur l'itinéraire via OpenStreetMap + barème par couple de gares.
+
+### Test B' — détection des gares de péage (OSRM + OpenStreetMap) sur Paris → Lyon ✅
+Script : [`spikes/gates_test.py`](../../spikes/gates_test.py) (Python standard, sans clé). Services publics de démonstration (OSRM, Overpass), usage de test uniquement.
+
+- **Itinéraire OSRM** Paris centre → Lyon centre : 465,9 km, 298 min, 8 611 points de géométrie.
+- **Gares de péage OSM** dans la zone englobante : 267 ; 19 à moins de 150 m du tracé.
+- Les gares trouvées le long du tracé, avec l'écart au tracé : **Fleury-en-Bière (0 m)**, Fontainebleau (63 m), Joigny (61 m), Chalon Nord (49 m), Chalon Sud (144 m), Villefranche Ville (93 m) et **Villefranche-Limas (0 m)**.
+- **Constat :** les gares réellement franchies sur le tronc principal (Fleury-en-Bière en entrée, Villefranche-Limas en sortie) sont à **~0 m** du tracé, alors que les gares de bretelles (Joigny, Chalon…) sont à 49 m ou plus. Un seuil d'environ **25 m** isole les bonnes gares sur ce trajet. Ce seuil est une **hypothèse issue d'un seul trajet** à confirmer sur les autres (T02, T03, T04, T07, T09, T10).
+- **Résultat :** la paire détectée (Fleury-en-Bière → Villefranche-Limas) est exactement celle de la grille APRR : **41,30 €**, soit la référence officielle de T01.
+- **Limites :** (1) un seul trajet testé ; (2) les noms OSM (« Péage de Fleury-en-Bière ») devront être rapprochés des noms des grilles (« FLEURY-EN-BIERE ») ; (3) un tracé qui passe sur une bretelle de gare produira un seuil ambigu ; (4) les services publics de démonstration ne sont pas utilisables en production (il faudra un routage gratuit avec quota ou auto-hébergé).
+
+### Test B'' — même méthode sur 5 autres trajets (2026-11-09)
+Script : [`spikes/gates_batch.py`](../../spikes/gates_batch.py). T07 (Paris → Nice) non testé séparément : il se déduit de T01 + T03 + Aix/Nice (voir S3). Gares « franchies » = à ≤ 25 m du tracé ; au-delà = bretelle probable.
+
+| Trajet | Itinéraire OSRM | Gares détectées à ≤ 25 m | Cohérence avec la référence officielle |
+|---|---|---|---|
+| T02 Paris → Lille | 219,8 km, 151 min | Survilliers-Saint-Witz (24 m ⚠️), Chamant (21 m), Senlis (0 m, même km que Chamant), Fresnes (0 m) | ⚠️ **Ambigu** : Fresnes ✅ (sortie du simulateur Sanef) ; Survilliers à 24 m est probablement une bretelle mais passe le seuil de 25 m |
+| T03 Lyon → Marseille | 313,8 km, 206 min | Vienne (0 m), Lançon (0 m) ; bretelles à 27 – 149 m correctement exclues | ✅ Paire **Vienne → Lançon** = celle d'Ulys, **28,10 €** (référence Vinci) |
+| T04 Bordeaux → Toulouse | 245,9 km, 161 min | Saint-Selve (0 m), Toulouse Nord (0 m) | ✅ Paire = celle d'Ulys (**22,20 €**). La référence Vinci à 22,90 € concerne « Toulouse nord-**est** » : **c'est la gare réellement empruntée qui fixe le prix** |
+| T09 Clermont → Béziers | 341,1 km, 222 min | Viaduc de Millau (0 m) seul | ✅ Seul péage du trajet : 11,30 / 13,80 € selon la saison |
+| T10 Caen → Le Havre | 96,0 km, 72 min | Pont de Normandie (0 m) seul | ✅ 6,10 €, aucune autre gare sur ce tracé |
+
+**Conclusion intermédiaire.**
+- La méthode retrouve les bonnes gares sur **4 trajets sur 5** (plus T01 déjà validé), sans clé, sans compte, sans quota.
+- Les vraies gares franchies sont à **0 m** du tracé. Un seuil de **10 m** (plutôt que 25 m) donne le bon résultat sur les 6 trajets testés ; à 25 m, T02 contient un faux positif (Survilliers, 24 m). Seuil à confirmer sur davantage de trajets.
+- **Points faibles :** (1) doublons (plusieurs nœuds OSM pour une même gare : Chamant / Senlis) ; (2) correspondance des noms OSM avec les noms des grilles (Toulouse Nord vs Toulouse nord-est, Chamant/Senlis) ; (3) le choix de l'itinéraire par OSRM peut emprunter une autre gare que celle de la référence ; (4) absence de contrôle sur les systèmes ouverts (barrières à tarif fixe).
+- **Verdict provisoire :** approche **viable et 100 % gratuite**, à condition de construire une table de correspondance « gare OSM ↔ gare de la grille » (travail manuel/semi-automatique, une fois par concessionnaire).
+
+### Test C — routage OpenRouteService (itinéraire + gares) : **non réalisé**
+Même condition : clé `ORS_API_KEY` à créer par toi. ORS ne donne pas de prix de péage ; on testerait l'itinéraire alternatif sans péage et les informations de voies à péage.
+
 ## Sources consultées
 - HERE : [tarifs](https://developer.here.com/pricing), [plans de base](https://developers.here.com/plans), [note sur les montants TTC](https://docs.here.com/here-kb/docs/routing-api-returns-toll-prices-including-taxes-how-can-i-get-net-toll-costs-or-tax-breakdown-details)
 - TomTom : [tarifs](https://developer.tomtom.com/pricing)

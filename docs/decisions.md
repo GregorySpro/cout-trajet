@@ -45,6 +45,11 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - Mécanismes : adaptateurs par fournisseur, cache, quota-guard (dégradation au lieu de dépassement payant).
 - Revoir si : HERE exige une carte bancaire ou ne couvre pas la France, ou si les quotas se révèlent trop bas.
 
+## D-015 — 2026-11-09 — HERE écarté
+- Constat : l'inscription HERE exige une carte bancaire ou PayPal. Incompatible avec le budget **0 € strict** (D-013) : un moyen de paiement enregistré expose à une facturation en cas de dépassement.
+- Choix : **ne pas utiliser HERE**. Les péages seront calculés par **barème par couple de gares** (APRR, Vinci, Sanef : données officielles) + détection des gares franchies par l'itinéraire (gares de péage OpenStreetMap, `barrier=toll_booth`, croisées avec la géométrie de l'itinéraire).
+- Revoir si : un fournisseur de péages sans carte bancaire apparaît, ou si la détection des gares s'avère trop imprécise.
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).
