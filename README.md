@@ -14,7 +14,7 @@ pnpm run check   # format + lint + typecheck + tests (identique à la CI)
 pnpm test        # tests seuls (vitest)
 ```
 
-Structure : `packages/shared` (types communs), `packages/cost-engine` (moteur de coût), `apps/api` (API Fastify, à venir), `apps/web` (site Next.js, à venir), `docs/` (cadrage et décisions), `spikes/` (scripts d'exploration jetables).
+Structure : `packages/shared` (types communs), `packages/cost-engine` (moteur de coût), `packages/tolls` (grilles de péage, gares, calcul des péages), `apps/api` (API Fastify, à venir), `apps/web` (site Next.js, à venir), `docs/` (cadrage et décisions), `spikes/` (scripts d'exploration jetables).
 
 Les secrets vont dans `.env` (ignoré par git) ; copier `.env.example` pour commencer.
 

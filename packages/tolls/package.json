@@ -1,0 +1,19 @@
+{
+  "name": "@cout-trajet/tolls",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Données de péage : lecture des grilles officielles, livre de tarifs par couple de gares, calcul des péages d'un itinéraire.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "build-data": "tsx scripts/build-toll-book.ts",
+    "check-trips": "tsx scripts/check-reference-trips.ts"
+  },
+  "dependencies": {
+    "@cout-trajet/cost-engine": "workspace:*",
+    "@cout-trajet/shared": "workspace:*"
+  }
+}

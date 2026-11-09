@@ -1,3 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+allowBuilds:
+  # Les binaires d'esbuild arrivent via les dépendances optionnelles par plateforme ;
+  # on n'exécute pas son script d'installation.
+  esbuild: false

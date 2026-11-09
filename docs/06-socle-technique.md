@@ -27,6 +27,25 @@ Date : 2026-11-09. Principe : **traiter d'abord ce qui peut tout remettre en cau
 | P5 | migrations SQL, politiques RLS | créer le projet Supabase, me donner l'URL et la clé publique (jamais la clé `service_role` dans le chat) |
 | P7 | configuration Next.js | créer le compte Vercel, ajouter le domaine, créer l'enregistrement DNS chez OVH |
 
+## Avancement (2026-11-09)
+
+| Étape | État |
+|---|---|
+| P0 Monorepo, CI | ✅ terminé, CI verte |
+| P1 Moteur de coût | ✅ terminé (`packages/cost-engine`) ; hypothèses de consommation à calibrer |
+| P2 Données de péage | 🟡 **cœur terminé** (`packages/tolls`) : lecture des grilles APRR, Vinci (ASF, Escota, Cofiroute) et Sanef ; livre de tarifs par couple de gares (34 711 couples en local) ; détection des gares franchies (≤ 10 m) ; correspondance gares OSM ↔ grilles ; calcul des péages d'un itinéraire ; péages à l'unité (Millau saisonnier, ponts de Normandie et Tancarville) |
+| P3–P8 | à faire |
+
+### Résultat P2 sur les trajets de référence (données réelles, local)
+`pnpm --filter @cout-trajet/tolls run check-trips` : **6 trajets sur 6 à 0 % d'écart** (T01, T02, T03, T04, T09, T10) sur la chaîne complète itinéraire OpenRouteService → gares OSM → gares de grille → prix officiel.
+
+⚠️ **Limites à garder en tête**
+- **Validation en partie circulaire** : la table de correspondance des gares (`gate-mapping.ts`) a été écrite à partir de ces mêmes trajets. Le test valide la chaîne de code, pas encore la capacité à généraliser à des trajets inconnus. Il faut de nouveaux trajets de contrôle avant de conclure.
+- **T04** : « Toulouse Nord » est ambiguë (Est 22,90 € / Ouest 22,20 €) ; la première gare est retenue avec un avertissement. L'écart de 0 % tient à ce choix.
+- **Couverture des grilles** : APRR : 752 lignes ignorées (coupure entrée/sortie ambiguë, ~3,5 %) ; Sanef : sections A4/A26 non lisibles (mise en page du PDF) rejetées avec avertissement ; AREA, SAPN et Escota↔ASF (chaînage Paris → Nice) non chargés.
+- Les grilles ne sont **pas versionnées** (documents tiers) : le livre de tarifs se régénère localement depuis `data-sources/`.
+- Les gares OSM viennent d'Overpass en direct pour l'instant ; en production elles seront exportées une fois dans Supabase.
+
 ## Règles de travail
 - **Petits commits**, un par sous-étape, poussés après ton accord.
 - **Tests d'abord pour le moteur de coût** : les 10 trajets de référence sont les tests d'acceptation (écart ≤ 10 %).
