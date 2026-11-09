@@ -45,6 +45,33 @@ coût_total     = coût_carburant + coût_péages [+ coûts annexes V2 : usure�
 
 Exemple de cas de test à écrire avant de coder : trajet fictif de 100 km tout autoroute, véhicule 5,0 L/100, prix 1,80 €/L, péage 10 € → carburant ≈ 9 € × facteur(vitesse), total ≈ 19 €+. Les cas de référence réels viendront du benchmark.
 
+## Implémentation du moteur (P1, version 0.1.0) — hypothèses à calibrer
+
+Code : `packages/cost-engine/src`. Fonction pure `estimateTrip(entrée)` → carburant, péages, durée, fourchette ; `compareRoutes(rapide, économique)` → surcoût, minutes gagnées, coût de l'heure gagnée.
+
+**Modèle de consommation.** Pour un tronçon de classe de route _c_ (ville, route, autoroute) parcouru à la vitesse _v_ :
+
+```
+facteur(v) = (1 − a) + a × (v / vRéf)²          a = part aérodynamique de la conso
+conso(c, v) = conso_de_base(c) × facteur(v)      (L/100 km)
+```
+
+| Classe    | Vitesse de référence | Part aérodynamique _a_ | Conso de base                             |
+| --------- | -------------------- | ---------------------- | ----------------------------------------- |
+| Ville     | 30 km/h              | 0 (pas de correction)  | conso urbaine ADEME                       |
+| Route     | 80 km/h              | 0,3                    | conso extra-urbaine ADEME                 |
+| Autoroute | 110 km/h             | 0,5                    | conso fournie, sinon extra-urbaine × 1,10 |
+
+Effets obtenus : autoroute à 130 km/h ≈ **+20 %** de consommation par rapport à 110 km/h, à 90 km/h ≈ **−17 %**.
+
+⚠️ **Toutes ces valeurs sont des hypothèses physiques raisonnables, pas des mesures.** Elles sont isolées dans `config.ts` pour être calibrées sans toucher à la logique. Non modélisé pour l'instant : consommation à très basse vitesse (embouteillages), dénivelé, climatisation, charge du véhicule, vent, écart entre consommation homologuée (WLTP) et consommation réelle.
+
+**Fourchette d'incertitude.** ±10 % sur le carburant ; péage **officiel** : ±0 ; péage **estimé** : ±15 %. La fourchette est renvoyée avec le total.
+
+**Péages.** Le moteur **ne calcule pas** les prix de péage : il reçoit des `TollCharge` (montant, source officielle ou estimée) du module de péages (étape P2) et les additionne.
+
+**Tests.** 66 tests Vitest : facteur de vitesse, consommation, durée, estimation, validation des entrées, comparaison d'itinéraires, et **les 7 trajets de référence** (péages officiels à 0 % d'écart, carburant plausible). Les trajets T05, T06 et T08 (péage nul) seront ajoutés avec leurs distances.
+
 ## Sources de données (⚠️ vérifier licences et formats avant d'intégrer)
 
 | Donnée | Source pressentie | Fréquence | Usage |

@@ -1,0 +1,124 @@
+{
+  "_comment": "Trajets de référence (spike S3). Péages officiels classe 1, tarifs 2026 relevés le 2026-11-09. Distances : OpenRouteService (T01-T04, T09, T10) ou Ulys non officiel (T07). Voir docs/spikes/S3-trajets-reference.md.",
+  "trips": [
+    {
+      "id": "T01",
+      "name": "Paris → Lyon",
+      "distanceKm": 465.4,
+      "tolls": [
+        {
+          "id": "aprr-fleury-villefranche-limas",
+          "amountEur": 41.3,
+          "source": "official",
+          "from": "FLEURY-EN-BIERE",
+          "to": "VILLEFRANCHE-LIMAS"
+        }
+      ],
+      "expectedTollEur": 41.3
+    },
+    {
+      "id": "T02",
+      "name": "Paris → Lille",
+      "distanceKm": 219.8,
+      "tolls": [
+        {
+          "id": "sanef-chamant-fresnes",
+          "amountEur": 18.9,
+          "source": "official",
+          "from": "PARIS / ROISSY (péage de Chamant)",
+          "to": "LILLE / DOURGES (péage de Fresnes)"
+        }
+      ],
+      "expectedTollEur": 18.9
+    },
+    {
+      "id": "T03",
+      "name": "Lyon → Marseille",
+      "distanceKm": 313.7,
+      "tolls": [
+        {
+          "id": "asf-vienne-lancon",
+          "amountEur": 28.1,
+          "source": "official",
+          "from": "VIENNE",
+          "to": "LANCON"
+        }
+      ],
+      "expectedTollEur": 28.1
+    },
+    {
+      "id": "T04",
+      "name": "Bordeaux → Toulouse",
+      "distanceKm": 243.8,
+      "tolls": [
+        {
+          "id": "asf-toulouse-nord-est-saint-selve",
+          "amountEur": 22.9,
+          "source": "official",
+          "from": "TOULOUSE-NORD/EST",
+          "to": "SAINT-SELVE"
+        }
+      ],
+      "expectedTollEur": 22.9
+    },
+    {
+      "id": "T07",
+      "name": "Paris → Nice (chaînage de 3 tronçons)",
+      "distanceKm": 933,
+      "tolls": [
+        {
+          "id": "aprr-fleury-villefranche-limas",
+          "amountEur": 41.3,
+          "source": "official",
+          "from": "FLEURY-EN-BIERE",
+          "to": "VILLEFRANCHE-LIMAS"
+        },
+        {
+          "id": "asf-lyon-marseille-aix",
+          "amountEur": 28.1,
+          "source": "official",
+          "from": "A7 Lyon",
+          "to": "Marseille-Aix"
+        },
+        {
+          "id": "vinci-aix-nice",
+          "amountEur": 21.2,
+          "source": "official",
+          "from": "Aix",
+          "to": "Nice"
+        }
+      ],
+      "expectedTollEur": 90.6
+    },
+    {
+      "id": "T09",
+      "name": "Clermont-Ferrand → Béziers (viaduc de Millau, hors été)",
+      "distanceKm": 341.9,
+      "tolls": [
+        {
+          "id": "millau-hors-ete",
+          "amountEur": 11.3,
+          "source": "official",
+          "from": "Viaduc de Millau",
+          "to": "Viaduc de Millau"
+        }
+      ],
+      "expectedTollEur": 11.3
+    },
+    {
+      "id": "T10",
+      "name": "Caen → Le Havre (pont de Normandie)",
+      "distanceKm": 98.7,
+      "tolls": [
+        {
+          "id": "pont-de-normandie",
+          "amountEur": 6.1,
+          "source": "official",
+          "from": "Pont de Normandie",
+          "to": "Pont de Normandie"
+        }
+      ],
+      "expectedTollEur": 6.1
+    }
+  ]
+}
