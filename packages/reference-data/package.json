@@ -1,0 +1,17 @@
+{
+  "name": "@cout-trajet/reference-data",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Données de référence : consommations des véhicules (ADEME) et prix des carburants (data.economie.gouv.fr).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "fetch-fuel": "tsx scripts/fetch-fuel-prices.ts"
+  },
+  "dependencies": {
+    "@cout-trajet/cost-engine": "workspace:*"
+  }
+}

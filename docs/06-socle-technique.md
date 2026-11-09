@@ -34,7 +34,9 @@ Date : 2026-11-09. Principe : **traiter d'abord ce qui peut tout remettre en cau
 | P0 Monorepo, CI | ✅ terminé, CI verte |
 | P1 Moteur de coût | ✅ terminé (`packages/cost-engine`) ; hypothèses de consommation à calibrer |
 | P2 Données de péage | 🟡 **cœur terminé** (`packages/tolls`) : lecture des grilles APRR, Vinci (ASF, Escota, Cofiroute) et Sanef ; livre de tarifs par couple de gares (34 711 couples en local) ; détection des gares franchies (≤ 10 m) ; correspondance gares OSM ↔ grilles ; calcul des péages d'un itinéraire ; péages à l'unité (Millau saisonnier, ponts de Normandie et Tancarville) |
-| P3–P8 | à faire |
+| P3 Données de référence | 🟡 **code terminé** (`packages/reference-data`, voir [S4-S5](spikes/S4-S5-ademe-et-carburants.md)) : consommations ADEME (3 202 lignes éligibles sur 3 604), prix des carburants par agrégation serveur (national + 96 départements, relevé réel du 2026-11-09), prix moyen pondéré par département. **Reste** : import complet des véhicules (accord de téléchargement), chargement dans Supabase (P5) |
+| P2 (fin) | ⏳ reporté à plus tard : gares de frontière entre réseaux, table de correspondance des axes principaux |
+| P4–P8 | à faire |
 
 ### Résultat P2 sur les trajets de référence (données réelles, local)
 `pnpm --filter @cout-trajet/tolls run check-trips` : **6 trajets sur 6 à 0 % d'écart** (T01, T02, T03, T04, T09, T10) sur la chaîne complète itinéraire OpenRouteService → gares OSM → gares de grille → prix officiel.
