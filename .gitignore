@@ -11,3 +11,6 @@ build/
 Thumbs.db
 .idea/
 .vscode/
+
+# Documents sources tiers (PDF/CSV), non versionnés
+data-sources/
