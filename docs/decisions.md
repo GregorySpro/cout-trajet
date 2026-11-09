@@ -50,6 +50,12 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - Choix : **ne pas utiliser HERE**. Les péages seront calculés par **barème par couple de gares** (APRR, Vinci, Sanef : données officielles) + détection des gares franchies par l'itinéraire (gares de péage OpenStreetMap, `barrier=toll_booth`, croisées avec la géométrie de l'itinéraire).
 - Revoir si : un fournisseur de péages sans carte bancaire apparaît, ou si la détection des gares s'avère trop imprécise.
 
+## D-016 — 2026-11-09 — Routage de production (provisoire, voir docs/spikes/S2-routage-production.md)
+- Choix : **OpenRouteService** en principal, **GraphHopper** puis **Geoapify** en secours, derrière une interface `RoutingProvider`, avec cache et quota-guard. Auto-hébergement exclu (budget 0 €), Mapbox exclu (carte bancaire), OSRM démo exclu (pas pour la production).
+- À confirmer par un test avec clé : inscription sans carte, alternatives, `extra_info` (tollways, waytype, vitesse), longueur max.
+- Revoir si : ORS exige un moyen de paiement ou ne propose pas les alternatives/`tollways` sur l'instance publique.
+- **Mise à jour après test (2026-11-09)** : ORS fonctionne mais le quota observé est de **200 requêtes/24 h** (pas 2 000) ; les alternatives intégrées sont limitées à 100 km (on utilise défaut + `avoid tolls` = 2 appels par recherche) ; `tollways` marque les tronçons à péage sans donner prix ni gare. Le **cache** et le **multi-fournisseur** deviennent obligatoires dès le MVP.
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).
