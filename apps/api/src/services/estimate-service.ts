@@ -73,7 +73,14 @@ export interface RouteEstimate {
   distanceKm: number;
   providerDurationMin: number;
   estimate: Estimate;
-  tolls: { charges: TollCharge[]; gates: string[]; complete: boolean };
+  tolls: {
+    charges: TollCharge[];
+    gates: string[];
+    /** Faux si un péage n'a pas pu être chiffré (gare sans correspondance, km à péage inexpliqués…). */
+    complete: boolean;
+    /** Vrai si au moins un péage est une estimation (correspondance par alias ou gare ambiguë). */
+    estimated: boolean;
+  };
   warnings: string[];
   geometry?: LonLat[];
 }
@@ -107,8 +114,32 @@ export interface EstimateDeps {
   vehicles: ReadonlyMap<string, VehicleModel>;
 }
 
-/** Au-delà de ce nombre de km « à péage » sans gare identifiée, le péage est peut-être sous-estimé. */
-const UNEXPLAINED_TOLL_KM = 15;
+/** Au-delà de ce nombre de km « à péage » hors des gares identifiées, le péage est peut-être sous-estimé. */
+const UNEXPLAINED_TOLL_KM = 10;
+/**
+ * Marge autour de la première et de la dernière gare : une route marquée « à péage » dans les
+ * approches d'une gare (bretelles, rocade gratuite classée à tort) n'est pas considérée comme inexpliquée.
+ */
+const TOLL_MARGIN_KM = 15;
+
+/** Distance « à péage » (km) qui se trouve en dehors de la fenêtre [première gare − marge, dernière gare + marge]. */
+function unexplainedTolledKm(
+  spans: readonly { fromKm: number; toKm: number }[],
+  detected: readonly { alongM: number }[],
+): number {
+  if (spans.length === 0) return 0;
+  const first = detected[0];
+  const last = detected[detected.length - 1];
+  if (!first || !last) return spans.reduce((s, x) => s + (x.toKm - x.fromKm), 0);
+  const windowStart = first.alongM / 1000 - TOLL_MARGIN_KM;
+  const windowEnd = last.alongM / 1000 + TOLL_MARGIN_KM;
+  let outside = 0;
+  for (const { fromKm, toKm } of spans) {
+    outside += Math.max(0, Math.min(toKm, windowStart) - fromKm);
+    outside += Math.max(0, toKm - Math.max(fromKm, windowEnd));
+  }
+  return outside;
+}
 
 export class EstimateService {
   private readonly knownGates: Set<string>;
@@ -253,25 +284,33 @@ export class EstimateService {
       openTolls,
       vehicleClass: ctx.tollClass,
       date: req.date,
+      uncertainGates: new Set(resolved.uncertain),
+      alternatives: new Map(Object.entries(resolved.alternatives)),
     });
     warnings.push(...resolved.warnings, ...trip.warnings);
 
-    const onlyOpenTolls =
-      resolved.gates.length === 0 ||
-      resolved.gates.every((g) => openTolls.some((o) => o.gate === g));
-    const unexplained = route.tolledKm > UNEXPLAINED_TOLL_KM && onlyOpenTolls;
+    const unexplainedKm = unexplainedTolledKm(route.tolledSpans, detected);
+    const unexplained = unexplainedKm > UNEXPLAINED_TOLL_KM;
     if (unexplained) {
       warnings.push(
-        `${Math.round(route.tolledKm)} km marqués « à péage » sans gare identifiée : le péage est peut-être sous-estimé.`,
+        `${Math.round(unexplainedKm)} km marqués « à péage » en dehors des gares identifiées (péage en flux libre sans barrière, comme sur l’A13 et l’A14, ou gare absente de la carte) : le péage est peut-être sous-estimé.`,
+      );
+    }
+    if (route.restrictedKm > 1) {
+      warnings.push(
+        `${Math.round(route.restrictedKm)} km sur des routes à accès restreint (livraison, destination…) : vérifiez que le véhicule y est autorisé.`,
       );
     }
     if (route.ferryKm > 0.1) {
       warnings.push('L’itinéraire comprend un bac : son tarif n’est pas compté.');
     }
+    // Incomplet : une gare sans correspondance, un couple sans tarif, une gare isolée, des km à péage
+    // inexpliqués. Une correspondance seulement incertaine ou ambiguë donne un prix « estimé », pas un manque.
     const complete =
       !unexplained &&
-      resolved.warnings.length === 0 &&
+      !resolved.warnings.some((w) => w.includes('sans correspondance')) &&
       !trip.warnings.some((w) => w.includes('Aucun tarif') || w.includes('Gare isolée'));
+    const estimated = trip.charges.some((c) => c.source === 'estimate');
 
     const estimate = estimateTrip({
       segments: route.segments,
@@ -288,7 +327,7 @@ export class EstimateService {
       distanceKm: Math.round(route.distanceKm * 10) / 10,
       providerDurationMin: Math.round(route.providerDurationMin),
       estimate,
-      tolls: { charges: trip.charges, gates: resolved.gates, complete },
+      tolls: { charges: trip.charges, gates: resolved.gates, complete, estimated },
       warnings,
       ...(req.includeGeometry ? { geometry: simplifyLine(route.coordinates, 30) } : {}),
     };

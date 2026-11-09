@@ -72,7 +72,11 @@ export class OpenRouteServiceProvider implements RoutingProvider {
       ],
       instructions: true,
       units: 'km',
-      extra_info: ['waycategory', 'waytype', 'tollways'],
+      // Pour un camion, on demande aussi les restrictions d'accès (livraison, destination…).
+      extra_info:
+        request.profile === 'driving-hgv'
+          ? ['waycategory', 'waytype', 'tollways', 'roadaccessrestrictions']
+          : ['waycategory', 'waytype', 'tollways'],
     };
     const options: Record<string, unknown> = {};
     if (request.avoidTolls) options['avoid_features'] = ['tollways'];
@@ -136,14 +140,16 @@ export class OpenRouteServiceProvider implements RoutingProvider {
     if (!feature?.geometry?.coordinates?.length) {
       throw new RoutingError('Réponse de routage inattendue.', 'unavailable', true);
     }
-    const { segments, tolledKm, ferryKm } = segmentRoute(feature);
+    const { segments, tolledKm, tolledSpans, ferryKm, restrictedKm } = segmentRoute(feature);
     return {
       distanceKm: feature.properties.summary.distance,
       providerDurationMin: feature.properties.summary.duration / 60,
       coordinates: feature.geometry.coordinates as LonLat[],
       segments,
       tolledKm,
+      tolledSpans,
       ferryKm,
+      restrictedKm,
     };
   }
 }

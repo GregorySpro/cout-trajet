@@ -207,6 +207,8 @@ for (const trip of TRIPS) {
     gates,
     warnings: rw,
     autoMatched,
+    uncertain,
+    alternatives,
   } = resolveRouteGates(detected, GATE_MAPPINGS, { knownGates });
   const unmapped = rw.filter((w) => w.includes('sans correspondance')).length;
   detectedTotal += detected.length;
@@ -220,6 +222,8 @@ for (const trip of TRIPS) {
     openTolls: OPEN_TOLLS,
     vehicleClass: 1,
     date: new Date('2026-11-09'),
+    uncertainGates: new Set(uncertain),
+    alternatives: new Map(Object.entries(alternatives)),
   });
   for (const w of [...rw, ...warnings].slice(0, 6)) console.log(`  ⚠ ${w}`);
   if (charges.length === 0) {

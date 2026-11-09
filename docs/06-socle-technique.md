@@ -70,6 +70,45 @@ Pour lever la réserve « validation circulaire », 5 trajets jamais utilisés p
 
 **Conclusion** : la précision est au rendez-vous quand une correspondance existe (6 + 3 trajets à 0 %), mais la **couverture** ne l'est pas encore (3 trajets inconnus sur 5). Chaque nouvelle région demande des correspondances manuelles ; la traduction automatique par nom exact réduit le travail sans le supprimer. Priorités pour P2b : (1) gares de frontière entre réseaux, (2) table de correspondance couvrant les gares des axes principaux, (3) export des gares OSM dans Supabase.
 
+### Fiabilisation des péages (2026-11-09, suite de P2)
+
+**Ce qui a été ajouté** (`packages/tolls`, API) :
+- **Correspondance automatique en trois niveaux** (`GateIndex`) : nom **exact**, nom **souple** (ponctuation, numéros de sortie, « Saint/St », « S/ » = « sur »), **alias** (texte entre parenthèses ou morceau d'un nom composé). Toujours dans le réseau de l'opérateur ; jamais de ressemblance floue.
+- **Prix « estimé » plutôt que « officiel »** pour une correspondance par alias ou ambiguë (ex. Toulouse Nord Est/Ouest : moyenne des candidates, 22,55 € au lieu de 22,90 € ou 22,20 €) ; la réponse de l'API porte `tolls.estimated`.
+- **Gares de frontière** (`sequence` + marqueur de rupture `GATE_BREAK`) : une gare compte comme sortie d'un sous-réseau et entrée du suivant (ex. Corzé / Angers sur Cofiroute).
+- **Détection des péages non expliqués par des gares** : l'API compare les plages « à péage » du routage à la fenêtre couverte par les gares détectées (marge de 15 km) ; au-delà de 10 km hors fenêtre, `tolls.complete = false` et la comparaison avec l'itinéraire sans péage est désactivée.
+- Deux correspondances manuelles de plus, contrôlées par les prix de Vinci : Saint-Jean-de-Védas = « Montpellier St-Jean » (27,60 €) ; Corzé-Angers (frontière).
+- Camions : routes à accès restreint signalées (extra-info `roadaccessrestrictions` du profil poids lourd).
+
+**Résultats**
+| Vérification | Résultat |
+|---|---|
+| 6 trajets de référence | 6/6 dans les ±10 % (T04 : 22,55 € estimé pour une référence de 22,90 €) |
+| 5 trajets inconnus | **5/5 chiffrés, 4/5 dans les ±10 %** (avant : 3 chiffrés) ; U5 Montpellier → Toulouse 27,90 € estimé (référence 27,60 €) ; U3 Paris → Nantes 38,10 € au lieu de 43,30 €, **signalé incomplet** (20 km à péage après la dernière gare détectée) |
+| API, Paris → Nantes | péage 38,10 €, `complete: false`, comparaison désactivée (fail-safe) |
+| API, Caen → Le Havre | `complete: false` (54 km à péage hors gares : flux libre A13/A14), comparaison désactivée |
+| API, camion 6 m / 80 t (absurde) | itinéraire différent (584 km contre 474 km) : **les restrictions du profil poids lourd sont bien appliquées** |
+
+**Couverture de la correspondance automatique** (`pnpm --filter @cout-trajet/tolls run coverage`, export national : 1 804 nœuds de gares, 1 475 nommés) :
+| Réseau | Gares OSM nommées | Retrouvées dans les grilles | Non trouvées |
+|---|---|---|---|
+| APRR | 260 | 214 (82 %) | 46 |
+| ASF | 414 | 334 (81 %, dont 8 ambiguës) | 80 |
+| Cofiroute | 165 | 125 (76 %) | 40 |
+| Escota | 121 | 99 (82 %) | 22 |
+| Sanef | 208 | 100 (48 %) | 108 |
+| **AREA** | 142 | **grille non chargée** | — |
+| **SAPN** (A13, A14, A29…) | 22 | **grille non chargée** | — |
+| Autres sociétés (ATMB, SFTRF, A'Lienor, Alis…) | 143 nommés + 328 sans nom | hors périmètre | — |
+Un nœud « retrouvé » signifie qu'un nom de grille correspond ; cela ne prouve pas que la correspondance est juste (cas Senlis/Chamant).
+
+**Limites qui restent, par ordre d'importance**
+1. **Péage en flux libre** : l'A13 (Paris–Normandie), l'A14 et la sortie 36 de l'A4 n'ont plus de barrières, remplacées par des portiques ([Sanef](https://www.autoroutes.sanef.com/fr/assistance/flux-libre/ou-se-situe-le-flux-libre)) ; l'A79 est aussi en flux libre. **OpenStreetMap ne répertorie aucun portique** (`highway=toll_gantry` : 0 nœud en France) : ces péages ne sont **pas détectables** par gares. L'API les signale (« km à péage hors des gares ») sans les chiffrer. Il faut les positions des portiques et les tarifs par tronçon (brochure SAPN).
+2. **Grilles manquantes** : AREA (142 gares), SAPN (22) et les barrières « systèmes ouverts » (APRR/AREA) ne sont pas chargées ; les PDF existent mais leur téléchargement est à faire par toi (le serveur refuse les téléchargements automatiques).
+3. **Noms non retrouvés** (environ 20 % des gares nommées) : à compléter à la main, en contrôlant chaque correspondance par un prix de référence.
+4. **Gares sans nom** (18 % des nœuds) : ignorées.
+5. **Sous-réseaux et barrières multiples** (Paris → Nantes) : une gare terminale non détectée fait sous-estimer le péage de ≈ 12 % ; signalé comme incomplet quand les plages à péage dépassent la dernière gare.
+
 ## Règles de travail
 - **Petits commits**, un par sous-étape, poussés après ton accord.
 - **Tests d'abord pour le moteur de coût** : les 10 trajets de référence sont les tests d'acceptation (écart ≤ 10 %).

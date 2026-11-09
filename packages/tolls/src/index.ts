@@ -1,6 +1,8 @@
 export { TollBook } from './book';
 export { detectGatesOnRoute, type DetectedGate, type LonLat, type OsmBooth } from './detect-gates';
+export { GATE_BREAK } from './gate-break';
 export { GATE_MAPPINGS } from './gate-mapping';
+export { GateIndex, looseKey, osmBaseName, type GateMatch, type MatchKind } from './gate-index';
 export {
   resolveRouteGates,
   type GateMapping,

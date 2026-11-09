@@ -35,8 +35,12 @@ export interface RouteResult {
   segments: RouteSegment[];
   /** Distance marquée « à péage » par le service de routage (km). */
   tolledKm: number;
+  /** Plages (km depuis le départ) marquées « à péage » : sert à repérer un péage non expliqué par des gares. */
+  tolledSpans: { fromKm: number; toKm: number }[];
   /** Distance en bac (km). */
   ferryKm: number;
+  /** Distance sur des routes à accès restreint (livraison, destination…), utile pour les poids lourds. */
+  restrictedKm: number;
 }
 
 /** Erreur de routage ; `retryable` indique si une nouvelle tentative plus tard peut réussir. */

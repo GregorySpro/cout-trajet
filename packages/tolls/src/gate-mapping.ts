@@ -1,3 +1,4 @@
+import { GATE_BREAK } from './gate-break';
 import type { GateMapping } from './gate-resolver';
 
 const CHAMANT = 'SANEF:PARIS / ROISSY (PEAGE DE CHAMANT)';
@@ -40,4 +41,17 @@ export const GATE_MAPPINGS: readonly GateMapping[] = [
   //    prix correspondent au PDF « principales liaisons »).
   { names: ['Péage de Saint-Arnoult'], gates: ['COFIROUTE:PARIS (LA FOLIE BESSIN)'] },
   { names: ['Péage de Monnaie'], gates: ['COFIROUTE:TOURS CENTRE (MONNAIE)'] },
+
+  // Fiabilisation des péages (2026-11-09).
+  //  - « Saint-Jean-de-Védas » (A9, ouest de Montpellier) est la gare « MONTPELLIER ST-JEAN » des grilles ASF :
+  //    contrôle par le prix, Montpellier St-Jean → Toulouse-Sud/Ouest = 27,60 € = « Montpellier / Toulouse
+  //    sud-ouest » du PDF Vinci « principales liaisons ».
+  { names: ['Saint-Jean-de-Védas'], gates: ['ASF:MONTPELLIER ST-JEAN'] },
+  //  - Corzé / Angers est une frontière entre deux sous-réseaux Cofiroute (A11 Paris → Angers-Corzé, puis
+  //    A11 Angers → Nantes) : sortie de l'un, entrée de l'autre. Paris → Angers-Corzé = 32,90 € (PDF Vinci).
+  {
+    names: ['Péage de Corzé-Angers'],
+    gates: ['COFIROUTE:ANGERS (CORZE)'],
+    sequence: ['COFIROUTE:ANGERS (CORZE)', GATE_BREAK, 'COFIROUTE:ANGERS'],
+  },
 ];

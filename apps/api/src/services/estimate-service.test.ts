@@ -38,8 +38,11 @@ const tollRoute: RouteResult = {
     { distanceKm: 40, roadClass: 'urban' },
     { distanceKm: 425, roadClass: 'motorway' },
   ],
-  tolledKm: 400,
+  tolledKm: 320,
+  // Entre Fleury (≈ 50 km du départ) et Limas (≈ 370 km), à vol d'oiseau.
+  tolledSpans: [{ fromKm: 50, toKm: 370 }],
   ferryKm: 0,
+  restrictedKm: 0,
 };
 const freeRoute: RouteResult = {
   distanceKm: 485.7,
@@ -54,7 +57,9 @@ const freeRoute: RouteResult = {
     { distanceKm: 425.7, roadClass: 'rural' },
   ],
   tolledKm: 0,
+  tolledSpans: [],
   ferryKm: 0,
+  restrictedKm: 0,
 };
 
 function fakeRouting(routes: { toll: RouteResult; free?: RouteResult | Error }) {
@@ -185,6 +190,7 @@ describe('EstimateService — voiture', () => {
         [4.8357, 45.764],
       ],
       tolledKm: 300,
+      tolledSpans: [{ fromKm: 50, toKm: 350 }],
     };
     const { provider } = fakeRouting({ toll: unknownGates, free: freeRoute });
     const r = await service(provider).estimate(baseRequest);
@@ -244,12 +250,62 @@ describe('EstimateService — voiture', () => {
         [4.8357, 45.764],
       ],
       tolledKm: 60,
+      tolledSpans: [{ fromKm: 0, toKm: 60 }],
     };
     const { provider } = fakeRouting({ toll: route });
     const r = await service(provider).estimate({ ...baseRequest, alternatives: false });
     const fast = r.routes[0];
     expect(fast?.tolls.complete).toBe(false);
-    expect(fast?.warnings.some((w) => w.includes('sans gare identifiée'))).toBe(true);
+    expect(fast?.warnings.some((w) => w.includes('en dehors des gares'))).toBe(true);
+  });
+
+  it('tolère quelques km marqués « à péage » dans les approches des gares (marge de 15 km)', async () => {
+    // Péage marqué jusqu'à 10 km avant Fleury et 10 km après Limas : expliqué par les gares voisines.
+    const route: RouteResult = { ...tollRoute, tolledSpans: [{ fromKm: 40, toKm: 380 }] };
+    const { provider } = fakeRouting({ toll: route });
+    const r = await service(provider).estimate({ ...baseRequest, alternatives: false });
+    expect(r.routes[0]?.tolls.complete).toBe(true);
+  });
+
+  it('signale un péage qui se poursuit loin après la dernière gare (gare non détectée ou flux libre)', async () => {
+    // Péage marqué jusqu'à 80 km après Limas : une gare au moins n'a pas été détectée.
+    const route: RouteResult = { ...tollRoute, tolledSpans: [{ fromKm: 50, toKm: 450 }] };
+    const { provider } = fakeRouting({ toll: route });
+    const r = await service(provider).estimate({ ...baseRequest, alternatives: false });
+    expect(r.routes[0]?.tolls.complete).toBe(false);
+    expect(r.routes[0]?.warnings.some((w) => w.includes('en dehors des gares'))).toBe(true);
+  });
+
+  it('un prix « estimé » (gare ambiguë) reste complet et est signalé comme estimé', async () => {
+    // Deux gares de grille se partagent le nom OpenStreetMap (comme Toulouse Nord Est / Ouest).
+    const ambiguous = new TollBook([
+      pair('APRR:FLEURY-EN-BIERE', 'APRR:VILLEFRANCHE-LIMAS/EST', 41.3),
+      pair('APRR:FLEURY-EN-BIERE', 'APRR:VILLEFRANCHE-LIMAS/OUEST', 43.3),
+    ]);
+    const s = new EstimateService({
+      routing: fakeRouting({ toll: tollRoute }).provider,
+      booths,
+      book: ambiguous,
+      fuelPrices,
+      vehicles: new Map(),
+      mappings: [],
+    });
+    const r = await s.estimate({ ...baseRequest, alternatives: false });
+    const fast = r.routes[0];
+    expect(fast?.tolls.estimated).toBe(true);
+    expect(fast?.tolls.complete).toBe(true);
+    expect(fast?.tolls.charges[0]?.source).toBe('estimate');
+  });
+
+  it('signale les routes à accès restreint pour un camion', async () => {
+    const { provider } = fakeRouting({ toll: { ...freeRoute, restrictedKm: 12 } });
+    const r = await service(provider).estimate({
+      ...baseRequest,
+      vehicle: { category: 'hgv-articulated' },
+      fuel: {},
+      alternatives: false,
+    });
+    expect(r.routes[0]?.warnings.some((w) => w.includes('accès restreint'))).toBe(true);
   });
 
   it('signale un bac (tarif non compté)', async () => {

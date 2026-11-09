@@ -80,6 +80,48 @@ describe('segmentRoute', () => {
     expect(r.ferryKm).toBeCloseTo(0.74, 1);
   });
 
+  it('donne les plages « à péage » en km depuis le départ, fusionnées quand elles se touchent', () => {
+    const r = segmentRoute(
+      route({
+        extras: {
+          tollways: {
+            values: [
+              [0, 20, 0],
+              [20, 40, 1],
+              [40, 60, 1], // se fond avec la précédente
+              [60, 80, 0],
+              [80, 100, 1],
+            ],
+          },
+        },
+      }),
+    );
+    expect(r.tolledSpans).toHaveLength(2);
+    expect(r.tolledSpans[0]?.fromKm).toBeCloseTo(1.48, 1); // 20 % de 7,4 km
+    expect(r.tolledSpans[0]?.toKm).toBeCloseTo(4.44, 1); // 60 %
+    expect(r.tolledSpans[1]?.fromKm).toBeCloseTo(5.92, 1); // 80 %
+    expect(r.tolledSpans[1]?.toKm).toBeCloseTo(7.4, 1);
+    const total = r.tolledSpans.reduce((s, x) => s + (x.toKm - x.fromKm), 0);
+    expect(total).toBeCloseTo(r.tolledKm, 6);
+  });
+
+  it('mesure les routes à accès restreint (poids lourds)', () => {
+    const r = segmentRoute(
+      route({
+        extras: {
+          roadaccessrestrictions: {
+            values: [
+              [0, 50, 0],
+              [50, 80, 8], // livraison seule
+              [80, 100, 0],
+            ],
+          },
+        },
+      }),
+    );
+    expect(r.restrictedKm).toBeCloseTo(7.4 * 0.3, 1);
+  });
+
   it('sans informations, tout est « route »', () => {
     const r = segmentRoute(route());
     expect(r.segments).toHaveLength(1);
@@ -91,6 +133,6 @@ describe('segmentRoute', () => {
       geometry: { coordinates: [[2, 48]] },
       properties: { summary: { distance: 0, duration: 0 } },
     });
-    expect(r).toEqual({ segments: [], tolledKm: 0, ferryKm: 0 });
+    expect(r).toEqual({ segments: [], tolledKm: 0, tolledSpans: [], ferryKm: 0, restrictedKm: 0 });
   });
 });

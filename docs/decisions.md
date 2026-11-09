@@ -64,6 +64,13 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - Pas de base de véhicules lourds : consommation par défaut modifiable par l'utilisateur.
 - Revoir si : le routage gratuit ne gère pas les restrictions des camions, ou si les péages des camions s'écartent des grilles (modulations, abonnements professionnels).
 
+## D-018 — 2026-11-09 — Péages : prudence plutôt que précision apparente
+- Constat : la détection par gares OpenStreetMap ne couvre pas les péages **en flux libre** (A13, A14, sortie 36 de l'A4, A79 : aucun portique dans OSM) ni les grilles AREA, SAPN et « systèmes ouverts » (non chargées) ; ~20 % des noms de gares restent sans correspondance.
+- Choix : l'API **ne devine jamais** un péage. Elle distingue trois états : `complete` (tout est chiffré), `estimated` (prix par alias ou gare ambiguë, moyenne des candidates), `complete = false` (péage manquant ou non expliqué). Dans ce dernier cas la **comparaison avec l'itinéraire sans péage est désactivée** et le site doit afficher « péage non calculé ».
+- Règles : correspondance automatique seulement dans le réseau de l'opérateur ; alias et ambiguïtés = prix estimé ; correspondances manuelles prioritaires et contrôlées par un prix de référence ; km « à péage » hors de la fenêtre des gares (marge 15 km, seuil 10 km) = incomplet.
+- À faire pour étendre la couverture : charger AREA, SAPN et les barrières ouvertes (PDF à enregistrer par le porteur) ; positions des portiques en flux libre (non disponibles dans OSM) ; compléter la table de correspondance par axe, chaque ajout contrôlé par un prix.
+- Revoir si : une source ouverte des portiques et de leurs tarifs apparaît (ex. open data des concessionnaires), ou si les ~20 % de noms non trouvés bloquent trop de trajets en pratique.
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).

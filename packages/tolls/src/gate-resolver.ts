@@ -1,3 +1,4 @@
+import { GateIndex } from './gate-index';
 import { normalizeGateName } from './normalize';
 
 /** Gare telle que détectée sur un itinéraire (nom OpenStreetMap et position). */
@@ -21,21 +22,29 @@ export interface GateMapping {
   at?: { lat: number; lon: number; radiusM: number };
   /** Gares de la grille. Plus d'une : correspondance ambiguë (la première est utilisée, avec avertissement). */
   gates: string[];
+  /**
+   * Gare de frontière entre deux réseaux : la gare compte comme plusieurs gares de grille, dans
+   * l'ordre du trajet (sortie du premier réseau puis entrée du suivant). Prioritaire sur `gates`.
+   */
+  sequence?: string[];
 }
 
 export interface ResolvedRouteGates {
   gates: string[];
   warnings: string[];
-  /** Gares traduites automatiquement (nom exact), sans entrée dans la table : à contrôler. */
+  /** Gares traduites automatiquement (sans entrée dans la table manuelle) : à contrôler. */
   autoMatched: string[];
+  /** Gares dont la correspondance est incertaine (alias, ou plusieurs candidates) : prix à traiter comme estimé. */
+  uncertain: string[];
+  /** Pour une gare ambiguë : la gare retenue → toutes les candidates. */
+  alternatives: Record<string, string[]>;
 }
 
 export interface ResolveOptions {
   /**
    * Gares connues des grilles (identifiants `RÉSEAU:NOM`). Si fourni, une gare OpenStreetMap sans
-   * correspondance manuelle est traduite quand son nom, normalisé et sans « Péage de », est
-   * exactement celui d'une gare du réseau indiqué par son opérateur. Les correspondances manuelles
-   * restent prioritaires. ⚠️ Un nom identique ne prouve pas qu'il s'agit de la même gare.
+   * correspondance manuelle est rapprochée automatiquement par son nom dans le réseau de son
+   * opérateur (voir `GateIndex`). Les correspondances manuelles restent prioritaires.
    */
   knownGates?: ReadonlySet<string>;
 }
@@ -50,12 +59,15 @@ const OPERATOR_TO_NETWORK: Readonly<Record<string, string>> = {
   SAPN: 'SAPN',
 };
 
-/** Identifiant de gare déduit du nom et de l'opérateur OpenStreetMap, ou `undefined`. */
-function autoGateId(osm: OsmGate): string | undefined {
-  const network = OPERATOR_TO_NETWORK[normalizeGateName(osm.operator ?? '')];
-  if (network === undefined) return undefined;
-  const base = normalizeGateName(osm.name).replace(/^PEAGE (DE |D')/, '');
-  return `${network}:${base}`;
+// Un index par ensemble de gares (la construction coûte quelques millisecondes).
+const indexCache = new WeakMap<ReadonlySet<string>, GateIndex>();
+function indexFor(known: ReadonlySet<string>): GateIndex {
+  let index = indexCache.get(known);
+  if (!index) {
+    index = new GateIndex(known);
+    indexCache.set(known, index);
+  }
+  return index;
 }
 
 function distanceM(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -72,6 +84,11 @@ export function resolveRouteGates(
   const gates: string[] = [];
   const warnings: string[] = [];
   const autoMatched: string[] = [];
+  const uncertain = new Set<string>();
+  const alternatives: Record<string, string[]> = {};
+  const push = (gate: string): void => {
+    if (gates[gates.length - 1] !== gate) gates.push(gate);
+  };
 
   for (const osm of osmGates) {
     const name = normalizeGateName(osm.name);
@@ -80,24 +97,49 @@ export function resolveRouteGates(
       (m) => m.at !== undefined && distanceM(osm.lat, osm.lon, m.at.lat, m.at.lon) <= m.at.radiusM,
     );
     const mapping = located ?? matching.find((m) => m.at === undefined);
-    if (!mapping) {
-      const auto = autoGateId(osm);
-      if (auto !== undefined && options.knownGates?.has(auto)) {
-        autoMatched.push(auto);
-        if (gates[gates.length - 1] !== auto) gates.push(auto);
+
+    if (mapping) {
+      if (mapping.sequence && mapping.sequence.length > 0) {
+        for (const g of mapping.sequence) push(g);
         continue;
       }
+      const gate = mapping.gates[0];
+      if (gate === undefined) continue;
+      if (mapping.gates.length > 1) {
+        alternatives[gate] = [...mapping.gates];
+        uncertain.add(gate);
+        warnings.push(
+          `Gare ambiguë « ${osm.name} » : ${mapping.gates.join(' ou ')} (prix estimé sur l'ensemble des candidates).`,
+        );
+      }
+      push(gate);
+      continue;
+    }
+
+    const network = OPERATOR_TO_NETWORK[normalizeGateName(osm.operator ?? '')];
+    const match =
+      network !== undefined && options.knownGates
+        ? indexFor(options.knownGates).match(network, osm.name)
+        : undefined;
+    if (!match) {
       warnings.push(`Gare OpenStreetMap sans correspondance : « ${osm.name} ».`);
       continue;
     }
-    const gate = mapping.gates[0];
-    if (gate === undefined) continue;
-    if (mapping.gates.length > 1) {
+    const gate = match.gates[0] as string;
+    autoMatched.push(gate);
+    if (match.gates.length > 1) {
+      alternatives[gate] = [...match.gates];
+      uncertain.add(gate);
       warnings.push(
-        `Gare ambiguë « ${osm.name} » : ${mapping.gates.join(' ou ')} (première retenue).`,
+        `Gare ambiguë « ${osm.name} » : ${match.gates.join(' ou ')} (prix estimé sur l'ensemble des candidates).`,
+      );
+    } else if (match.kind === 'alias') {
+      uncertain.add(gate);
+      warnings.push(
+        `Correspondance incertaine pour « ${osm.name} » → ${gate} (rapprochement par alias).`,
       );
     }
-    if (gates[gates.length - 1] !== gate) gates.push(gate);
+    push(gate);
   }
-  return { gates, warnings, autoMatched };
+  return { gates, warnings, autoMatched, uncertain: [...uncertain], alternatives };
 }

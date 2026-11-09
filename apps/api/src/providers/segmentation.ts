@@ -11,6 +11,7 @@ export interface OrsRoute {
       waycategory?: { values: [number, number, number][] };
       waytype?: { values: [number, number, number][] };
       tollways?: { values: [number, number, number][] };
+      roadaccessrestrictions?: { values: [number, number, number][] };
     };
   };
 }
@@ -18,7 +19,11 @@ export interface OrsRoute {
 export interface SegmentedRoute {
   segments: RouteSegment[];
   tolledKm: number;
+  /** Plages (en km depuis le départ) marquées « à péage » par le service de routage. */
+  tolledSpans: { fromKm: number; toKm: number }[];
   ferryKm: number;
+  /** Distance sur des routes à accès restreint (livraison, destination…), pertinent pour les poids lourds. */
+  restrictedKm: number;
 }
 
 /** Bits de l'extra-info `waycategory` d'OpenRouteService. */
@@ -57,7 +62,7 @@ function valueAt(ranges: [number, number, number][] | undefined, i: number): num
 export function segmentRoute(route: OrsRoute): SegmentedRoute {
   const coords = route.geometry.coordinates;
   const n = coords.length - 1;
-  if (n < 1) return { segments: [], tolledKm: 0, ferryKm: 0 };
+  if (n < 1) return { segments: [], tolledKm: 0, tolledSpans: [], ferryKm: 0, restrictedKm: 0 };
 
   const lengths: number[] = [];
   let total = 0;
@@ -83,10 +88,14 @@ export function segmentRoute(route: OrsRoute): SegmentedRoute {
   const segments: RouteSegment[] = [];
   let tolledKm = 0;
   let ferryKm = 0;
+  let restrictedKm = 0;
+  let position = 0; // km depuis le départ
+  const tolledSpans: { fromKm: number; toKm: number }[] = [];
   let current: { roadClass: RoadClass; km: number } | null = null;
 
   for (let i = 0; i < n; i++) {
     const km = (lengths[i] as number) * scale;
+    if (valueAt(extras?.roadaccessrestrictions?.values, i) ?? 0) restrictedKm += km;
     const category = valueAt(extras?.waycategory?.values, i) ?? 0;
     const isFerry = valueAt(extras?.waytype?.values, i) === WAYTYPE_FERRY;
     let roadClass: RoadClass;
@@ -99,7 +108,13 @@ export function segmentRoute(route: OrsRoute): SegmentedRoute {
       const speed = stepSpeed[i];
       roadClass = speed !== undefined && speed < URBAN_MAX_AVG_KMH ? 'urban' : 'rural';
     }
-    if (valueAt(extras?.tollways?.values, i) === 1) tolledKm += km;
+    if (valueAt(extras?.tollways?.values, i) === 1) {
+      tolledKm += km;
+      const last = tolledSpans[tolledSpans.length - 1];
+      if (last && Math.abs(last.toKm - position) < 1e-9) last.toKm = position + km;
+      else tolledSpans.push({ fromKm: position, toKm: position + km });
+    }
+    position += km;
 
     if (current && current.roadClass === roadClass) {
       current.km += km;
@@ -110,5 +125,5 @@ export function segmentRoute(route: OrsRoute): SegmentedRoute {
   }
   if (current) segments.push({ distanceKm: current.km, roadClass: current.roadClass });
 
-  return { segments, tolledKm, ferryKm };
+  return { segments, tolledKm, tolledSpans, ferryKm, restrictedKm };
 }

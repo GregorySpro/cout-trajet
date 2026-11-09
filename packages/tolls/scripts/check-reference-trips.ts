@@ -142,13 +142,20 @@ for (const trip of TRIPS) {
   console.log(
     `  gares détectées (≤ 10 m) : ${detected.map((g) => g.name).join(' → ') || 'aucune'}`,
   );
-  const { gates, warnings: resolveWarnings } = resolveRouteGates(detected, GATE_MAPPINGS);
+  const {
+    gates,
+    warnings: resolveWarnings,
+    uncertain,
+    alternatives,
+  } = resolveRouteGates(detected, GATE_MAPPINGS, { knownGates: book.gates() });
   console.log(`  gares de grille          : ${gates.join(' → ') || 'aucune'}`);
   const { charges, warnings } = computeTripTolls(gates, {
     book,
     openTolls: OPEN_TOLLS,
     vehicleClass: 1,
     date: trip.date,
+    uncertainGates: new Set(uncertain),
+    alternatives: new Map(Object.entries(alternatives)),
   });
   const total = Math.round(charges.reduce((s, c) => s + c.amountEur, 0) * 100) / 100;
   for (const w of [...resolveWarnings, ...warnings]) console.log(`  ⚠ ${w}`);
