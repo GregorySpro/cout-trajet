@@ -1,10 +1,11 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { connect } from '@cout-trajet/db';
 import { z } from 'zod';
 import { CachedFuelPrices } from './services/fuel-price-source';
 import { buildApp } from './app';
-import { loadData } from './data';
+import { loadData, loadDataFromDatabase, type LoadedData } from './data';
 import { TtlCache } from './infra/cache';
 import { QuotaGuard } from './infra/quota';
 import { OpenRouteServiceProvider } from './providers/ors';
@@ -34,12 +35,23 @@ const env = z
   })
   .parse(process.env);
 
-const data = loadData({
-  tollBook: env.TOLL_BOOK_PATH,
-  booths: env.OSM_BOOTHS_PATH,
-  vehicles: env.VEHICLES_PATH,
-  fuelPrices: env.FUEL_PRICES_PATH,
-});
+// Source des données de référence : la base (si DATABASE_URL est définie) ou des fichiers locaux.
+let data: LoadedData;
+if (process.env['DATABASE_URL']) {
+  const client = await connect();
+  try {
+    data = await loadDataFromDatabase(client);
+  } finally {
+    await client.end();
+  }
+} else {
+  data = loadData({
+    tollBook: env.TOLL_BOOK_PATH,
+    booths: env.OSM_BOOTHS_PATH,
+    vehicles: env.VEHICLES_PATH,
+    fuelPrices: env.FUEL_PRICES_PATH,
+  });
+}
 
 const quota = new QuotaGuard(20);
 const routing = new OpenRouteServiceProvider({
@@ -61,6 +73,7 @@ const service = new EstimateService({
   book: data.book,
   fuelPrices,
   vehicles: data.vehicles,
+  ...(data.openTolls ? { openTolls: data.openTolls } : {}),
 });
 
 const app = await buildApp({

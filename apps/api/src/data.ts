@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { readReferenceData, type Queryable } from '@cout-trajet/db';
 import type { FuelPriceSnapshot, VehicleModel } from '@cout-trajet/reference-data';
-import { TollBook, type OsmBooth, type PricePair } from '@cout-trajet/tolls';
+import { TollBook, type OpenToll, type OsmBooth, type PricePair } from '@cout-trajet/tolls';
 
 interface OsmNode {
   lat: number;
@@ -35,7 +36,28 @@ export interface LoadedData {
   book: TollBook;
   booths: OsmBooth[];
   vehicles: Map<string, VehicleModel>;
+  /** Péages à tarif fixe (depuis la base) ; absent = ceux du code. */
+  openTolls?: OpenToll[];
   fuelSnapshot?: { snapshot: FuelPriceSnapshot; fetchedAt: string };
+}
+
+/**
+ * Charge les données de référence depuis la base (Supabase / Postgres).
+ * Le livre de tarifs est reconstitué avec ses sources : la règle « la plus récente, puis la plus
+ * fiable » s'applique de la même façon que pour un chargement depuis les fichiers.
+ */
+export async function loadDataFromDatabase(client: Queryable): Promise<LoadedData> {
+  const db = await readReferenceData(client);
+  const fuelSnapshot = db.fuel
+    ? { snapshot: db.fuel.snapshot, fetchedAt: `${db.fuel.day}T00:00:00.000Z` }
+    : undefined;
+  return {
+    book: new TollBook(db.pairs),
+    booths: db.booths,
+    vehicles: new Map(db.vehicles.map((v) => [v.key, v])),
+    ...(db.openTolls.length > 0 ? { openTolls: db.openTolls } : {}),
+    ...(fuelSnapshot ? { fuelSnapshot } : {}),
+  };
 }
 
 export interface DataPaths {

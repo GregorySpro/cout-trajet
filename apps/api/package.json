@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@cout-trajet/cost-engine": "workspace:*",
+    "@cout-trajet/db": "workspace:*",
     "@cout-trajet/reference-data": "workspace:*",
     "@cout-trajet/shared": "workspace:*",
     "@cout-trajet/tolls": "workspace:*",

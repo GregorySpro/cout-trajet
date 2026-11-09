@@ -1,0 +1,23 @@
+{
+  "name": "@cout-trajet/db",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Base de données (Supabase / Postgres) : migrations SQL, chargement des données de référence.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "migrate": "tsx scripts/migrate.ts",
+    "load": "tsx scripts/load-reference-data.ts"
+  },
+  "dependencies": {
+    "@cout-trajet/reference-data": "workspace:*",
+    "@cout-trajet/tolls": "workspace:*",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  }
+}

@@ -78,6 +78,12 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - Dates retenues : fichiers Vinci = date de dernière modification de leur serveur (14/10/2026) ; PDF = date d'application annoncée (01/02/2026).
 - Revoir si : une source récente se révèle moins fiable qu'une ancienne (alors baisser sa fiabilité, pas contourner la règle), ou si les modulations tarifaires (heures creuses, jours fériés) imposent un modèle de tarif non unique par couple.
 
+## D-020 — 2026-11-09 — Supabase : schéma, confidentialité des tarifs, chargement direct
+- Contexte : l'API doit lire ses données de référence ailleurs que dans des fichiers locaux, et préparer comptes et trajets enregistrés.
+- Choix : trois migrations SQL versionnées (`supabase/migrations`), appliquées par `pnpm --filter @cout-trajet/db run migrate` (suivi dans `schema_migrations`). **RLS activée sur toutes les tables.** Lecture publique uniquement pour `vehicle_models` et `fuel_prices` ; tarifs de péages, gares OSM et cache de routes réservés au serveur (rôle de service/connexion directe) ; tables utilisateur (profils, véhicules, trajets) en accès propriétaire seul via `(select auth.uid())`. Chargement par connexion Postgres directe (pooler IPv4), en une transaction, sans jamais vider véhicules ni prix carburant.
+- Raison : les gares OSM sont sous licence ODbL et les grilles viennent de documents des concessionnaires ; les garder privées évite de redistribuer une base. Le pooler évite le problème d'IPv6 du plan gratuit.
+- Revoir si : le projet gratuit est mis en pause pour inactivité (prévoir un appel périodique), ou si les limites de stockage gratuit sont atteintes.
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).
