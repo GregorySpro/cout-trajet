@@ -1,0 +1,3 @@
+# Fins de ligne normalisées en LF dans le dépôt (évite les avertissements LF/CRLF sous Windows).
+* text=auto eol=lf
+*.pdf binary

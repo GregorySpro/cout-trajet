@@ -1,0 +1,16 @@
+{
+  "name": "@cout-trajet/cost-engine",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Moteur de calcul du coût d'un trajet (TypeScript pur, sans dépendance réseau).",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@cout-trajet/shared": "workspace:*"
+  }
+}

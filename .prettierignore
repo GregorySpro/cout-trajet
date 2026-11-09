@@ -1,0 +1,13 @@
+node_modules
+pnpm-lock.yaml
+dist
+build
+.next
+.vercel
+coverage
+data-sources
+spikes
+docs
+.env
+.env.*
+!.env.example

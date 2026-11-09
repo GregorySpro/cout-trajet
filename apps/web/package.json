@@ -1,0 +1,7 @@
+{
+  "name": "@cout-trajet/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Site Next.js hébergé sur Vercel — arrive à l'étape P6."
+}

@@ -1,0 +1,7 @@
+{
+  "name": "@cout-trajet/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "API REST (Fastify) hébergée sur Render — arrive à l'étape P4."
+}
