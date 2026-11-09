@@ -3,5 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "API REST (Fastify) hébergée sur Render — arrive à l'étape P4."
+  "description": "API REST (Fastify) : itinéraire, péages, consommation et prix du carburant. Hébergée sur Render.",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts"
+  },
+  "dependencies": {
+    "@cout-trajet/cost-engine": "workspace:*",
+    "@cout-trajet/reference-data": "workspace:*",
+    "@cout-trajet/shared": "workspace:*",
+    "@cout-trajet/tolls": "workspace:*",
+    "@fastify/cors": "^11.4.1",
+    "@fastify/rate-limit": "^11.2.2",
+    "fastify": "^5.12.8",
+    "zod": "^4.6.7"
+  }
 }

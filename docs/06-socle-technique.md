@@ -37,7 +37,8 @@ Date : 2026-11-09. Principe : **traiter d'abord ce qui peut tout remettre en cau
 | P3 Données de référence | 🟡 **code terminé** (`packages/reference-data`, voir [S4-S5](spikes/S4-S5-ademe-et-carburants.md)) : consommations ADEME importées (3 604 lignes → **594 versions** de véhicules distinctes), prix des carburants par agrégation serveur (national + 96 départements, relevé réel du 2026-11-09), prix moyen pondéré par département. **Reste** : chargement dans Supabase (P5) |
 | Camions et autres catégories (D-017) | ✅ **moteur et péages prêts** : catégories (voiture, utilitaire, camping-car, porteur, articulé, moto), classe de péage déduite de la hauteur / PTAC / essieux, camions à 90 km/h avec consommation moyenne CNR et pauses de 45 min, coût hors taxes, péages classes 1 à 5 testés sur la grille APRR et les ouvrages. **Reste** : routage poids lourd (P4), interface (V1) |
 | P2 (fin) | ⏳ reporté à plus tard : gares de frontière entre réseaux, table de correspondance des axes principaux |
-| P4–P8 | à faire |
+| P4 API (Fastify) | 🟡 **P4a terminé : fonctionne en local sur de vrais trajets** (voir [07-api.md](07-api.md)) : `/estimate`, `/vehicles`, `/fuel-prices`, `/health` ; routage OpenRouteService (voiture et poids lourd) avec cache et garde de quota ; péages officiels ; alternative sans péage ; validation, limite de débit, CORS ; 241 tests. **Reste (P4b)** : déploiement Render (compte à créer), données de référence hors fichiers locaux (P5), durée plus réaliste |
+| P5–P8 | à faire |
 
 ### Résultat P2 sur les trajets de référence (données réelles, local)
 `pnpm --filter @cout-trajet/tolls run check-trips` : **6 trajets sur 6 à 0 % d'écart** (T01, T02, T03, T04, T09, T10) sur la chaîne complète itinéraire OpenRouteService → gares OSM → gares de grille → prix officiel.
