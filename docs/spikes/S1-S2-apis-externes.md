@@ -81,6 +81,26 @@ Script : [`spikes/gates_batch.py`](../../spikes/gates_batch.py). T07 (Paris → 
 - **Points faibles :** (1) doublons (plusieurs nœuds OSM pour une même gare : Chamant / Senlis) ; (2) correspondance des noms OSM avec les noms des grilles (Toulouse Nord vs Toulouse nord-est, Chamant/Senlis) ; (3) le choix de l'itinéraire par OSRM peut emprunter une autre gare que celle de la référence ; (4) absence de contrôle sur les systèmes ouverts (barrières à tarif fixe).
 - **Verdict provisoire :** approche **viable et 100 % gratuite**, à condition de construire une table de correspondance « gare OSM ↔ gare de la grille » (travail manuel/semi-automatique, une fois par concessionnaire).
 
+### Test D — péage de bout en bout : ORS + gares OSM + grille officielle (2026-11-09)
+Script : [`spikes/e2e_tolls.py`](../../spikes/e2e_tolls.py). Itinéraire OpenRouteService (clé locale), gares OpenStreetMap à ≤ 10 m du tracé, prix cherché dans la grille officielle APRR quand les gares sont APRR. Réponses mises en cache dans `data-sources/cache/` (ignoré par git).
+
+| Trajet | Gares détectées sur le tracé ORS | Prix | Résultat |
+|---|---|---|---|
+| T01 Paris → Lyon | Fleury-en-Bière → Villefranche-Limas | **41,30 €** (grille APRR) | ✅ **Écart 0,0 %** vs référence officielle (41,30 €) : **chaîne complète validée** |
+| T02 Paris → Lille | Senlis (= Chamant) → Fresnes | non calculé (Sanef : pas de grille par gares chargée) | ✅ gares cohérentes avec le simulateur Sanef (Paris → barrière de Fresnes) |
+| T04 Bordeaux → Toulouse | Saint-Selve → Toulouse Nord | non calculé (ASF : grille par gares non chargée) | ✅ gares cohérentes avec Ulys (22,20 €) |
+| T10 Caen → Le Havre | Pont de Normandie seul | 6,10 € (tarif à l'unité) | ✅ gare unique ; ⚠️ ORS marque aussi 2 tronçons « péage » sans gare détectée (voir ci-dessous) |
+| T03 Lyon → Marseille | — | — | ⏳ Overpass en erreur (502/délai) ; déjà validé sur l'itinéraire OSRM (Vienne → Lançon) |
+| T09 Clermont → Béziers | — | — | ⏳ idem ; déjà validé sur OSRM (viaduc de Millau seul) |
+
+**Enseignements**
+1. **La chaîne itinéraire → gares → prix est validée sur T01 avec 0 % d'écart.** C'est le premier résultat de bout en bout.
+2. **La règle « gare à ≤ 10 m du tracé » fonctionne** sur les 4 trajets calculés. En revanche, **les extrémités des tronçons « péage » d'ORS ne donnent pas les gares** : le début du tronçon est à 4 – 5 km de la gare d'entrée (T01, T02, T04), alors que la fin tombe parfois sur la gare (Fresnes, Toulouse Nord). Il ne faut **pas** s'appuyer sur ces extrémités.
+3. **T10** : 2 tronçons ORS « péage » (230 et 246 points) sans aucune gare OSM à moins de 4,7 km. Ces tronçons sont probablement des autoroutes marquées « payantes » dans OSM mais sans barrière sur le tracé ; **à investiguer** avant de conclure que le péage de T10 se limite au pont.
+4. **Le maillon faible est la table des prix par gares** : seule APRR est exploitable aujourd'hui (grille PDF lue). Pour Sanef et Vinci il faut obtenir leurs grilles gare à gare (Vinci : fichiers .txt « tarifs internes » dont le lien est caché dans la page ; Sanef : brochures PDF « Tarifs 2026 »).
+5. **Production : ne pas dépendre d'Overpass en direct.** Le service public a échoué à 3 reprises sur 4 trajets pendant ce test (502, délais dépassés). Il faut **exporter une fois** les gares de péage de France (quelques milliers de points) et les stocker dans Supabase/PostGIS ; la détection se fera alors en base, sans appel externe.
+6. **Verdict provisoire go/no-go : GO conditionnel.** La méthode est prouvée et gratuite. Il reste à valider à plus grande échelle (le critère S1 était ≥ 8 trajets sur 10 à ±10 %) en chargeant les grilles Sanef et Vinci.
+
 ### Test C — routage OpenRouteService (itinéraire + gares) : **non réalisé**
 Même condition : clé `ORS_API_KEY` à créer par toi. ORS ne donne pas de prix de péage ; on testerait l'itinéraire alternatif sans péage et les informations de voies à péage.
 
