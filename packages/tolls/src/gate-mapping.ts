@@ -32,4 +32,12 @@ export const GATE_MAPPINGS: readonly GateMapping[] = [
   // T09 / T10 : péages à l'unité
   { names: ['Péage viaduc de Millau'], gates: ['OUVRAGE:VIADUC DE MILLAU'] },
   { names: ['Pont de Normandie'], gates: ['OUVRAGE:PONT DE NORMANDIE'] },
+
+  // Trajets inconnus U1/U2 (validation de P2, passe 2). Ces deux correspondances ne sont pas
+  // évidentes par le nom, elles ont été contrôlées par les prix de référence de Vinci :
+  //  - la barrière de Saint-Arnoult est l'entrée « Paris (La Folie-Bessin) » des grilles Cofiroute
+  //    (→ Orléans-nord 12,00 € ; → Tours centre (Monnaie) 26,00 € ; → Angers (Corzé) 32,90 € : les trois
+  //    prix correspondent au PDF « principales liaisons »).
+  { names: ['Péage de Saint-Arnoult'], gates: ['COFIROUTE:PARIS (LA FOLIE BESSIN)'] },
+  { names: ['Péage de Monnaie'], gates: ['COFIROUTE:TOURS CENTRE (MONNAIE)'] },
 ];

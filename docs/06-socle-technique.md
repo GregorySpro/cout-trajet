@@ -46,6 +46,26 @@ Date : 2026-11-09. Principe : **traiter d'abord ce qui peut tout remettre en cau
 - Les grilles ne sont **pas versionnées** (documents tiers) : le livre de tarifs se régénère localement depuis `data-sources/`.
 - Les gares OSM viennent d'Overpass en direct pour l'instant ; en production elles seront exportées une fois dans Supabase.
 
+### Validation de P2 sur des trajets inconnus (2026-11-09)
+Pour lever la réserve « validation circulaire », 5 trajets jamais utilisés pour écrire la table de correspondance ont été passés dans la chaîne (`pnpm --filter @cout-trajet/tolls run check-unseen`). Références indépendantes : PDF « principales liaisons » de Vinci. Les gares OSM viennent d'un **export national unique** (1 804 nœuds, `tools/export-osm-toll-booths.py`), ce qui supprime les appels Overpass par trajet (qui échouaient ou dépassaient 10 minutes sur les longs trajets).
+
+| Trajet | Gares détectées (≤ 10 m) | Passe 1 (table des 6 trajets de référence) | Passe 2 (correspondance automatique + 2 ajouts) |
+|---|---|---|---|
+| U1 Paris → Orléans | Saint-Arnoult → Orléans Nord | aucune gare traduite | **12,00 €, 0 %** |
+| U2 Paris → Tours | Saint-Arnoult → Monnaie | aucune | **26,00 €, 0 %** |
+| U3 Paris → Nantes | Saint-Arnoult → Corzé-Angers → Ancenis | aucune | ❌ **non chiffré** (frontière de réseau à Corzé) |
+| U4 Lyon → Montpellier | Vienne → Baillargues | 1 gare sur 2 | **32,80 €, 0 %** |
+| U5 Montpellier → Toulouse | Saint-Jean-de-Védas → Toulouse Sud | aucune | ❌ **non chiffré** (2 gares sans correspondance) |
+
+**Lecture des résultats**
+- **La détection des gares généralise** : les 11 gares détectées sont de vraies barrières des autoroutes empruntées, sans fausse gare.
+- **La correspondance est le goulot d'étranglement** : en passe 1, 1 gare sur 11 était traduite (celle déjà dans la table). La **traduction automatique par nom exact** (même réseau, nom identique après normalisation) a traduit 3 gares, **toutes confirmées par les prix** ; 2 correspondances non évidentes (Saint-Arnoult = « Paris (La Folie-Bessin) », Monnaie = « Tours centre (Monnaie) ») ont été contrôlées en recoupant 3 prix Vinci (12,00 € ; 26,00 € ; 32,90 €).
+- **3 trajets sur 5 chiffrés, tous à 0 %**. Pour les 2 autres, **aucun prix faux n'est produit** : la chaîne signale la gare manquante et ne chiffre pas (comportement sûr, à relayer à l'utilisateur sous la forme « péage non calculé »).
+- **Cas U3** : Paris → Nantes se calcule par addition de deux tronçons (Paris → Angers-Corzé 32,90 € + Angers → Nantes 10,40 € = 43,30 € dans le PDF Vinci), mais la gare de Corzé est une **frontière entre deux réseaux** (Cofiroute / ASF) et la grille Cofiroute n'a pas de couple Paris → Ancenis. Il faut modéliser les gares de frontière (une gare = sortie d'un réseau et entrée du suivant) et les péages en plusieurs tronçons.
+- **Cas U5** : « Toulouse Sud » existe en Est et en Ouest ; « Saint-Jean-de-Védas » n'a pas de nom équivalent évident dans la grille ASF. Ces deux gares demandent une correspondance manuelle contrôlée.
+
+**Conclusion** : la précision est au rendez-vous quand une correspondance existe (6 + 3 trajets à 0 %), mais la **couverture** ne l'est pas encore (3 trajets inconnus sur 5). Chaque nouvelle région demande des correspondances manuelles ; la traduction automatique par nom exact réduit le travail sans le supprimer. Priorités pour P2b : (1) gares de frontière entre réseaux, (2) table de correspondance couvrant les gares des axes principaux, (3) export des gares OSM dans Supabase.
+
 ## Règles de travail
 - **Petits commits**, un par sous-étape, poussés après ton accord.
 - **Tests d'abord pour le moteur de coût** : les 10 trajets de référence sont les tests d'acceptation (écart ≤ 10 %).

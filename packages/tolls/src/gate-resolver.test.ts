@@ -64,6 +64,60 @@ describe('resolveRouteGates', () => {
     expect(r.warnings).toHaveLength(1);
   });
 
+  describe('correspondance automatique par nom exact', () => {
+    const known = new Set(['COFIROUTE:ORLEANS NORD', 'ASF:BAILLARGUES']);
+
+    it('traduit une gare sans entrée manuelle quand le nom exact existe dans le réseau de l’opérateur', () => {
+      const r = resolveRouteGates(
+        [
+          { name: 'Orléans Nord', operator: 'COFIROUTE', lat: 47.9, lon: 1.9 },
+          { name: 'Péage de Baillargues', operator: 'ASF', lat: 43.66, lon: 4.0 },
+        ],
+        GATE_MAPPINGS,
+        { knownGates: known },
+      );
+      expect(r.gates).toEqual(['COFIROUTE:ORLEANS NORD', 'ASF:BAILLARGUES']);
+      expect(r.autoMatched).toEqual(['COFIROUTE:ORLEANS NORD', 'ASF:BAILLARGUES']);
+      expect(r.warnings).toEqual([]);
+    });
+
+    it('ne traduit pas sans option (comportement par défaut prudent)', () => {
+      const r = resolveRouteGates(
+        [{ name: 'Orléans Nord', operator: 'COFIROUTE', lat: 47.9, lon: 1.9 }],
+        GATE_MAPPINGS,
+      );
+      expect(r.gates).toEqual([]);
+      expect(r.autoMatched).toEqual([]);
+    });
+
+    it('refuse un nom identique dans un autre réseau (opérateur différent)', () => {
+      const r = resolveRouteGates(
+        [{ name: 'Orléans Nord', operator: 'ASF', lat: 47.9, lon: 1.9 }],
+        GATE_MAPPINGS,
+        { knownGates: known },
+      );
+      expect(r.gates).toEqual([]);
+      expect(r.warnings[0]).toContain('sans correspondance');
+    });
+
+    it('refuse quand l’opérateur est inconnu', () => {
+      const r = resolveRouteGates([{ name: 'Orléans Nord', lat: 47.9, lon: 1.9 }], GATE_MAPPINGS, {
+        knownGates: known,
+      });
+      expect(r.gates).toEqual([]);
+    });
+
+    it('les correspondances manuelles gardent la priorité', () => {
+      const r = resolveRouteGates(
+        [{ name: 'Péage de Fleury-en-Bière', operator: 'APRR', lat: 48.4259, lon: 2.5404 }],
+        GATE_MAPPINGS,
+        { knownGates: new Set(['APRR:FLEURY-EN-BIERE']) },
+      );
+      expect(r.gates).toEqual(['APRR:FLEURY-EN-BIERE']);
+      expect(r.autoMatched).toEqual([]);
+    });
+  });
+
   it('ignore les différences d’accents et de casse', () => {
     const r = resolveRouteGates([{ name: 'PEAGE DE LANCON', lat: 43.6, lon: 5.1 }], GATE_MAPPINGS);
     expect(r.gates).toEqual(['ASF:LANCON']);

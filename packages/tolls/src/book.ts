@@ -27,12 +27,18 @@ export class TollBook {
     return this.find(from, to)?.prices[vehicleClass];
   }
 
-  has(gate: string): boolean {
-    for (const key of this.byKey.keys()) {
-      const [a, b] = key.split('>');
-      if (a === gate || b === gate) return true;
+  /** Identifiants de toutes les gares présentes dans le livre. */
+  gates(): Set<string> {
+    const out = new Set<string>();
+    for (const p of this.byKey.values()) {
+      out.add(p.from);
+      out.add(p.to);
     }
-    return false;
+    return out;
+  }
+
+  has(gate: string): boolean {
+    return this.gates().has(gate);
   }
 
   /** Toutes les paires, pour sérialiser le livre (JSON). */

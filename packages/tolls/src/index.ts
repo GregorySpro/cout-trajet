@@ -5,6 +5,7 @@ export {
   resolveRouteGates,
   type GateMapping,
   type OsmGate,
+  type ResolveOptions,
   type ResolvedRouteGates,
 } from './gate-resolver';
 export { gateId, normalizeGateName, parseFrenchNumber } from './normalize';

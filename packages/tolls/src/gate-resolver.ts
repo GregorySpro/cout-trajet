@@ -26,6 +26,36 @@ export interface GateMapping {
 export interface ResolvedRouteGates {
   gates: string[];
   warnings: string[];
+  /** Gares traduites automatiquement (nom exact), sans entrée dans la table : à contrôler. */
+  autoMatched: string[];
+}
+
+export interface ResolveOptions {
+  /**
+   * Gares connues des grilles (identifiants `RÉSEAU:NOM`). Si fourni, une gare OpenStreetMap sans
+   * correspondance manuelle est traduite quand son nom, normalisé et sans « Péage de », est
+   * exactement celui d'une gare du réseau indiqué par son opérateur. Les correspondances manuelles
+   * restent prioritaires. ⚠️ Un nom identique ne prouve pas qu'il s'agit de la même gare.
+   */
+  knownGates?: ReadonlySet<string>;
+}
+
+const OPERATOR_TO_NETWORK: Readonly<Record<string, string>> = {
+  APRR: 'APRR',
+  AREA: 'AREA',
+  ASF: 'ASF',
+  COFIROUTE: 'COFIROUTE',
+  ESCOTA: 'ESCOTA',
+  SANEF: 'SANEF',
+  SAPN: 'SAPN',
+};
+
+/** Identifiant de gare déduit du nom et de l'opérateur OpenStreetMap, ou `undefined`. */
+function autoGateId(osm: OsmGate): string | undefined {
+  const network = OPERATOR_TO_NETWORK[normalizeGateName(osm.operator ?? '')];
+  if (network === undefined) return undefined;
+  const base = normalizeGateName(osm.name).replace(/^PEAGE (DE |D')/, '');
+  return `${network}:${base}`;
 }
 
 function distanceM(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -37,9 +67,11 @@ function distanceM(lat1: number, lon1: number, lat2: number, lon2: number): numb
 export function resolveRouteGates(
   osmGates: readonly OsmGate[],
   mappings: readonly GateMapping[],
+  options: ResolveOptions = {},
 ): ResolvedRouteGates {
   const gates: string[] = [];
   const warnings: string[] = [];
+  const autoMatched: string[] = [];
 
   for (const osm of osmGates) {
     const name = normalizeGateName(osm.name);
@@ -49,6 +81,12 @@ export function resolveRouteGates(
     );
     const mapping = located ?? matching.find((m) => m.at === undefined);
     if (!mapping) {
+      const auto = autoGateId(osm);
+      if (auto !== undefined && options.knownGates?.has(auto)) {
+        autoMatched.push(auto);
+        if (gates[gates.length - 1] !== auto) gates.push(auto);
+        continue;
+      }
       warnings.push(`Gare OpenStreetMap sans correspondance : « ${osm.name} ».`);
       continue;
     }
@@ -61,5 +99,5 @@ export function resolveRouteGates(
     }
     if (gates[gates.length - 1] !== gate) gates.push(gate);
   }
-  return { gates, warnings };
+  return { gates, warnings, autoMatched };
 }
