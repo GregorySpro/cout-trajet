@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   GATE_MAPPINGS,
-  OPEN_TOLLS,
+  prepareOpenTolls,
   TollBook,
   computeTripTolls,
   detectGatesOnRoute,
@@ -182,7 +182,8 @@ const book = new TollBook(
   (JSON.parse(readFileSync(bookFile, 'utf-8')) as { pairs: PricePair[] }).pairs,
 );
 
-const knownGates = book.gates();
+const prepared = prepareOpenTolls(book.gates());
+const knownGates = prepared.knownGates;
 let detectedTotal = 0;
 let unmappedTotal = 0;
 let autoTotal = 0;
@@ -227,7 +228,7 @@ for (const trip of TRIPS) {
     console.log(`  traduites automatiquement : ${autoMatched.join(', ')}`);
   const { charges, warnings } = computeTripTolls(gates, {
     book,
-    openTolls: OPEN_TOLLS,
+    openTolls: prepared.openTolls,
     vehicleClass: 1,
     date: new Date('2026-11-09'),
     uncertainGates: new Set(uncertain),

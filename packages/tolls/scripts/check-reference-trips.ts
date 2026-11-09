@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   GATE_MAPPINGS,
-  OPEN_TOLLS,
+  prepareOpenTolls,
   TollBook,
   computeTripTolls,
   detectGatesOnRoute,
@@ -111,6 +111,7 @@ if (!existsSync(bookFile)) {
 const book = new TollBook(
   (JSON.parse(readFileSync(bookFile, 'utf-8')) as { pairs: PricePair[] }).pairs,
 );
+const prepared = prepareOpenTolls(book.gates());
 
 let failed = 0;
 let skipped = 0;
@@ -147,11 +148,11 @@ for (const trip of TRIPS) {
     warnings: resolveWarnings,
     uncertain,
     alternatives,
-  } = resolveRouteGates(detected, GATE_MAPPINGS, { knownGates: book.gates() });
+  } = resolveRouteGates(detected, GATE_MAPPINGS, { knownGates: prepared.knownGates });
   console.log(`  gares de grille          : ${gates.join(' → ') || 'aucune'}`);
   const { charges, warnings } = computeTripTolls(gates, {
     book,
-    openTolls: OPEN_TOLLS,
+    openTolls: prepared.openTolls,
     vehicleClass: 1,
     date: trip.date,
     uncertainGates: new Set(uncertain),

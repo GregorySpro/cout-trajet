@@ -115,13 +115,13 @@ Résultat du jour : **0 conflit** entre les sources chargées (aucun couple n'es
 
 **Non chargé, avec la raison**
 - **SAPN (A13, A14, A29)** : seulement 6 couples lus sur la grille ; sa mise en page est un tableau à plusieurs colonnes entrelacées (A29 Nord / A13-A29 Sud / A13) que l'extraction de texte ne restitue pas. Intérêt limité : l'A13 et l'A14 sont en flux libre (portiques absents d'OpenStreetMap).
-- **Barrières « systèmes ouverts » APRR/AREA** : le PDF ne contient que des images (aucun texte extractible). Lecture possible avec un outil d'extraction d'images (Pillow) puis lecture visuelle : accord à demander.
+**Barrières « systèmes ouverts » APRR/AREA — chargées** (accord donné) : le PDF ne contient que des images ; Pillow installé dans l'environnement isolé de pypdf, image extraite puis **lue visuellement** et saisie à la main (`open-barriers.ts`) : **20 barrières** (13 APRR dont le tunnel Maurice-Lemaire, 7 AREA), tarifs des classes 1 à 5 au 01/02/2026. Garde-fous : tests de relevé sur plusieurs lignes, cohérence des classes (5 ≤ 1 ≤ 2 ≤ 3 ≤ 4), identifiants uniques. Une barrière dont le nom est aussi celui d'une gare de grille (ex. Villefranche-Ville) est **écartée au profit de la grille** : un trajet qui sort à cette gare ne paie pas le forfait. ⚠️ Saisie manuelle, à revérifier si le document change.
 
-**Couverture après extension** : AREA 131 gares nommées sur 142 retrouvées (92 %) ; APRR 213 sur 260 (82 %) ; les autres réseaux sont inchangés.
+**Couverture après extension** : AREA 133 gares nommées sur 142 retrouvées (94 %) ; APRR 236 sur 260 (91 %, contre 82 % avant les barrières ouvertes) ; les autres réseaux sont inchangés.
 
 **Limites qui restent, par ordre d'importance**
 1. **Péage en flux libre** : l'A13 (Paris–Normandie), l'A14 et la sortie 36 de l'A4 n'ont plus de barrières, remplacées par des portiques ([Sanef](https://www.autoroutes.sanef.com/fr/assistance/flux-libre/ou-se-situe-le-flux-libre)) ; l'A79 est aussi en flux libre. **OpenStreetMap ne répertorie aucun portique** (`highway=toll_gantry` : 0 nœud en France) : ces péages ne sont **pas détectables** par gares. L'API les signale (« km à péage hors des gares ») sans les chiffrer. Il faut les positions des portiques et les tarifs par tronçon (brochure SAPN).
-2. **Grilles manquantes** : AREA (142 gares), SAPN (22) et les barrières « systèmes ouverts » (APRR/AREA) ne sont pas chargées ; les PDF existent mais leur téléchargement est à faire par toi (le serveur refuse les téléchargements automatiques).
+2. **Grilles manquantes** : seule la grille SAPN (22 gares) reste quasi non chargée (6 couples sur une mise en page à colonnes entrelacées) ; AREA et les barrières « systèmes ouverts » APRR/AREA sont maintenant chargées.
 3. **Noms non retrouvés** (environ 20 % des gares nommées) : à compléter à la main, en contrôlant chaque correspondance par un prix de référence.
 4. **Gares sans nom** (18 % des nœuds) : ignorées.
 5. **Sous-réseaux et barrières multiples** (Paris → Nantes) : une gare terminale non détectée fait sous-estimer le péage de ≈ 12 % ; signalé comme incomplet quand les plages à péage dépassent la dernière gare.

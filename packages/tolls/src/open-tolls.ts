@@ -1,4 +1,5 @@
 import type { VehicleClass } from '@cout-trajet/shared';
+import { OPEN_BARRIERS } from './open-barriers';
 import type { ClassPrices } from './types';
 
 /** Période saisonnière (jours inclus), au format MM-JJ. */
@@ -42,10 +43,10 @@ export function openTollPrice(toll: OpenToll, date: Date, vehicleClass: VehicleC
 }
 
 /**
- * Péages à l'unité relevés sur les sites officiels le 2026-11-09.
+ * Ouvrages à péage à l'unité relevés sur les sites officiels le 2026-11-09.
  * ⚠️ Les tarifs changent chaque année (et parfois en cours d'année) : à revérifier avant utilisation.
  */
-export const OPEN_TOLLS: readonly OpenToll[] = [
+const STRUCTURES: readonly OpenToll[] = [
   {
     gate: 'OUVRAGE:VIADUC DE MILLAU',
     name: 'Viaduc de Millau',
@@ -76,3 +77,27 @@ export const OPEN_TOLLS: readonly OpenToll[] = [
     effectiveFrom: '2026-05-01',
   },
 ];
+
+/** Tous les péages à tarif fixe : ouvrages (ponts, viaduc) et barrières à système ouvert APRR/AREA. */
+export const OPEN_TOLLS: readonly OpenToll[] = [...STRUCTURES, ...OPEN_BARRIERS];
+
+/**
+ * Prépare les péages à tarif fixe pour une utilisation avec un livre de tarifs :
+ *  - une barrière dont le nom est aussi celui d'une gare de grille est écartée : la gare de grille
+ *    (tarif par couple d'entrée et de sortie) est prioritaire, car un trajet qui sort à cette gare ne
+ *    paie pas le forfait de la barrière ;
+ *  - `knownGates` rassemble les gares de grille et les péages à tarif fixe, pour le rapprochement
+ *    automatique des noms OpenStreetMap.
+ */
+export function prepareOpenTolls(
+  closedGates: ReadonlySet<string>,
+  openTolls: readonly OpenToll[] = OPEN_TOLLS,
+): { openTolls: OpenToll[]; knownGates: Set<string>; dropped: string[] } {
+  const kept = openTolls.filter((o) => !closedGates.has(o.gate));
+  const dropped = openTolls.filter((o) => closedGates.has(o.gate)).map((o) => o.gate);
+  return {
+    openTolls: kept,
+    knownGates: new Set([...closedGates, ...kept.map((o) => o.gate)]),
+    dropped,
+  };
+}

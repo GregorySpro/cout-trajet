@@ -11,7 +11,14 @@ export {
   type ResolvedRouteGates,
 } from './gate-resolver';
 export { gateId, normalizeGateName, parseFrenchNumber } from './normalize';
-export { OPEN_TOLLS, openTollPrice, type OpenToll, type Season } from './open-tolls';
+export { OPEN_BARRIERS } from './open-barriers';
+export {
+  OPEN_TOLLS,
+  openTollPrice,
+  prepareOpenTolls,
+  type OpenToll,
+  type Season,
+} from './open-tolls';
 export { parseAprrText } from './parse-aprr';
 export { parseAreaText } from './parse-area';
 export { parseSanefText } from './parse-sanef';

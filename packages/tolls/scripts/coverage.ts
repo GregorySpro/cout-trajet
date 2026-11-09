@@ -13,6 +13,7 @@ import {
   GATE_MAPPINGS,
   GateIndex,
   normalizeGateName,
+  prepareOpenTolls,
   TollBook,
   type PricePair,
 } from '../src/index';
@@ -27,7 +28,8 @@ const book = new TollBook(
     }
   ).pairs,
 );
-const index = new GateIndex(book.gates());
+const prepared = prepareOpenTolls(book.gates());
+const index = new GateIndex(prepared.knownGates);
 const nodes = (
   JSON.parse(
     readFileSync(join(root, 'data-sources', 'cache', 'osm_france_toll_booths.json'), 'utf-8'),
@@ -36,7 +38,7 @@ const nodes = (
 
 const manual = new Set(GATE_MAPPINGS.flatMap((m) => m.names.map((n) => normalizeGateName(n))));
 const NETWORKS = new Set(['APRR', 'AREA', 'ASF', 'COFIROUTE', 'ESCOTA', 'SANEF', 'SAPN']);
-const loaded = new Set([...book.gates()].map((g) => g.split(':')[0]));
+const loaded = new Set([...prepared.knownGates].map((g) => g.split(':')[0]));
 
 type Row = Record<string, number>;
 const stats = new Map<string, Row>();

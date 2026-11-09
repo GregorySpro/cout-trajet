@@ -22,6 +22,7 @@ import {
   OPEN_TOLLS,
   computeTripTolls,
   detectGatesOnRoute,
+  prepareOpenTolls,
   resolveRouteGates,
   type GateMapping,
   type LonLat,
@@ -143,9 +144,14 @@ function unexplainedTolledKm(
 
 export class EstimateService {
   private readonly knownGates: Set<string>;
+  private readonly openTolls: readonly OpenToll[];
 
   constructor(private readonly deps: EstimateDeps) {
-    this.knownGates = deps.book.gates();
+    // Gares de grille + péages à tarif fixe (ponts, barrières ouvertes) ; une barrière ouverte qui
+    // porte le nom d'une gare de grille est écartée au profit de la grille.
+    const prepared = prepareOpenTolls(deps.book.gates(), deps.openTolls ?? OPEN_TOLLS);
+    this.knownGates = prepared.knownGates;
+    this.openTolls = prepared.openTolls;
   }
 
   async estimate(req: EstimateRequest): Promise<EstimateResponse> {
@@ -278,10 +284,9 @@ export class EstimateService {
     const resolved = resolveRouteGates(detected, this.deps.mappings ?? GATE_MAPPINGS, {
       knownGates: this.knownGates,
     });
-    const openTolls = this.deps.openTolls ?? OPEN_TOLLS;
     const trip = computeTripTolls(resolved.gates, {
       book,
-      openTolls,
+      openTolls: this.openTolls,
       vehicleClass: ctx.tollClass,
       date: req.date,
       uncertainGates: new Set(resolved.uncertain),
