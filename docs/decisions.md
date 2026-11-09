@@ -71,6 +71,13 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - À faire pour étendre la couverture : charger AREA, SAPN et les barrières ouvertes (PDF à enregistrer par le porteur) ; positions des portiques en flux libre (non disponibles dans OSM) ; compléter la table de correspondance par axe, chaque ajout contrôlé par un prix.
 - Revoir si : une source ouverte des portiques et de leurs tarifs apparaît (ex. open data des concessionnaires), ou si les ~20 % de noms non trouvés bloquent trop de trajets en pratique.
 
+## D-019 — 2026-11-09 — Conflits entre sources de tarifs : la plus récente, puis la plus fiable
+- Contexte : plusieurs documents peuvent donner un prix pour le même couple de gares (grilles de février, fichiers Vinci d'octobre, guide ASF de juin, sites d'ouvrages mis à jour le 1er mai…).
+- Choix : chaque tarif porte sa **source** (date d'application ou de dernière mise à jour, fiabilité). En cas de prix différents : **la plus récente l'emporte** ; à date égale ou inconnue, **la plus fiable** (officiel > dérivé > site tiers > estimation) ; sinon la première chargée. Tout désaccord est journalisé (`conflicts`) et chaque péage affiché cite sa source (`provenance`).
+- Raison : les tarifs bougent en cours d'année (ponts de Normandie le 1er mai, ASF le 1er juin, gratuité exceptionnelle de l'A14 le 16/11/2026) ; une date connue prime donc sur la fiabilité.
+- Dates retenues : fichiers Vinci = date de dernière modification de leur serveur (14/10/2026) ; PDF = date d'application annoncée (01/02/2026).
+- Revoir si : une source récente se révèle moins fiable qu'une ancienne (alors baisser sa fiabilité, pas contourner la règle), ou si les modulations tarifaires (heures creuses, jours fériés) imposent un modèle de tarif non unique par couple.
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).

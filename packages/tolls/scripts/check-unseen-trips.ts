@@ -77,6 +77,14 @@ const TRIPS: Trip[] = [
     expectedEur: 27.6,
     referenceNote: 'Vinci : Montpellier / Toulouse sud-ouest (A9/A61)',
   },
+  {
+    id: 'U6',
+    name: 'Lyon → Annecy',
+    from: [4.8357, 45.764],
+    to: [6.1294, 45.8992],
+    expectedEur: 17.7,
+    referenceNote: 'Ulys (estimation, tiers : Vinci) — réseaux APRR puis AREA',
+  },
 ];
 
 interface OsmNode {

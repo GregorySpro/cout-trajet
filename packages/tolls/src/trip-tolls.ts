@@ -63,12 +63,14 @@ export function computeTripTolls(gates: readonly string[], ctx: TripTollContext)
           prices.length > 1 ||
           (ctx.uncertainGates?.has(first) ?? false) ||
           (ctx.uncertainGates?.has(last) ?? false);
+        const provenance = ctx.book.find(first, last)?.source?.label;
         charges.push({
           id: `${first}>${last}`,
           amountEur: amount,
           source: estimated ? 'estimate' : 'official',
           from: first,
           to: last,
+          ...(provenance !== undefined ? { provenance } : {}),
         });
         if (group.length > 2) {
           warnings.push(
@@ -94,6 +96,7 @@ export function computeTripTolls(gates: readonly string[], ctx: TripTollContext)
         source: 'official',
         from: open.name,
         to: open.name,
+        provenance: open.source,
       });
       continue;
     }

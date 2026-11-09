@@ -13,6 +13,33 @@ describe('osmBaseName', () => {
   it('laisse un nom sans préfixe inchangé (hors casse et accents)', () => {
     expect(osmBaseName('Orléans Nord')).toBe('ORLEANS NORD');
   });
+
+  it('peut conserver le suffixe « Barrière » quand la grille s’en sert', () => {
+    expect(osmBaseName('Quincieux Barrière', true)).toBe('QUINCIEUX BARRIERE');
+  });
+});
+
+describe('GateIndex — suffixe « Barrière » (grille AREA)', () => {
+  const index = new GateIndex([
+    'AREA:ST QUENTIN FAL. BARRIERE',
+    'AREA:ST QUENTIN FAL. BRETELLE',
+    'AREA:ANNECY CENTRE',
+    'APRR:QUINCIEUX',
+  ]);
+
+  it('retrouve « Saint-Quentin-Fal. Barrière » sans le confondre avec la bretelle', () => {
+    expect(index.match('AREA', 'Saint-Quentin-Fal. Barrière')).toEqual({
+      gates: ['AREA:ST QUENTIN FAL. BARRIERE'],
+      kind: 'loose',
+    });
+  });
+
+  it('le suffixe est ignoré quand la grille ne l’utilise pas', () => {
+    expect(index.match('APRR', 'Quincieux Barrière')).toEqual({
+      gates: ['APRR:QUINCIEUX'],
+      kind: 'exact',
+    });
+  });
 });
 
 describe('looseKey', () => {

@@ -39,6 +39,8 @@ export interface TollCharge {
   source: 'official' | 'estimate';
   from?: string;
   to?: string;
+  /** Document d'où vient le tarif (ex. « Grille APRR au 01/02/2026 »), pour la transparence. */
+  provenance?: string;
 }
 
 export interface EstimateInput {

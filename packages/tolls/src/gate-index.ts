@@ -12,12 +12,13 @@ export interface GateMatch {
 // Préfixes fréquents des noms OpenStreetMap : « Péage de X », « Gare de péage de X », « Barrière de péage de X »…
 const PREFIX = /^(GARE DE PEAGE |BARRIERE DE PEAGE |PEAGE |GARE )(DE LA |DE L'|DE |DU |DES |D')?/;
 
-/** Nom OpenStreetMap débarrassé de ses préfixes (« Péage de Fleury-en-Bière » → « FLEURY-EN-BIERE »). */
-export function osmBaseName(name: string): string {
-  return normalizeGateName(name)
-    .replace(PREFIX, '')
-    .replace(/ BARRIERE$/, '')
-    .trim();
+/**
+ * Nom OpenStreetMap débarrassé de ses préfixes (« Péage de Fleury-en-Bière » → « FLEURY-EN-BIERE »)
+ * et, sauf demande contraire, de son suffixe « Barrière ».
+ */
+export function osmBaseName(name: string, keepBarrierSuffix = false): string {
+  const base = normalizeGateName(name).replace(PREFIX, '');
+  return (keepBarrierSuffix ? base : base.replace(/ BARRIERE$/, '')).trim();
 }
 
 /**
@@ -87,16 +88,28 @@ export class GateIndex {
   match(network: string, osmName: string): GateMatch | undefined {
     const idx = this.networks.get(network);
     if (!idx) return undefined;
-    const base = osmBaseName(osmName);
-    const exact = idx.exact.get(base);
-    if (exact !== undefined) return { gates: [exact], kind: 'exact' };
+    // Deux lectures du nom : avec le suffixe « Barrière » (certaines grilles l'emploient pour distinguer
+    // « ST QUENTIN FAL. BARRIERE » de « ST QUENTIN FAL. BRETELLE »), puis sans.
+    const withSuffix = osmBaseName(osmName, true);
+    const withoutSuffix = osmBaseName(osmName);
+    const bases = withSuffix === withoutSuffix ? [withoutSuffix] : [withSuffix, withoutSuffix];
 
-    const key = looseKey(base);
-    if (key === '') return undefined;
-    const loose = idx.loose.get(key);
-    if (loose && loose.size > 0) return { gates: [...loose].sort(), kind: 'loose' };
-    const alias = idx.alias.get(key);
-    if (alias && alias.size > 0) return { gates: [...alias].sort(), kind: 'alias' };
+    for (const base of bases) {
+      const exact = idx.exact.get(base);
+      if (exact !== undefined) return { gates: [exact], kind: 'exact' };
+    }
+    for (const base of bases) {
+      const key = looseKey(base);
+      if (key === '') continue;
+      const loose = idx.loose.get(key);
+      if (loose && loose.size > 0) return { gates: [...loose].sort(), kind: 'loose' };
+    }
+    for (const base of bases) {
+      const key = looseKey(base);
+      if (key === '') continue;
+      const alias = idx.alias.get(key);
+      if (alias && alias.size > 0) return { gates: [...alias].sort(), kind: 'alias' };
+    }
     return undefined;
   }
 }

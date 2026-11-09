@@ -70,7 +70,7 @@ export function parseAprrText(text: string, concession: 'APRR' | 'AREA' = 'APRR'
   }
 
   // Passe 2 : lignes ambiguës, départagées par le vocabulaire.
-  let skipped = 0;
+  const unresolved: Row[] = [];
   for (const r of pending) {
     const n = r.head.split(' ').length;
     const ok: number[] = [];
@@ -79,14 +79,28 @@ export function parseAprrText(text: string, concession: 'APRR' | 'AREA' = 'APRR'
       if (vocabulary.has(a) && vocabulary.has(b)) ok.push(k);
     }
     if (ok.length === 1) resolved.set(r, ok[0] as number);
+    else unresolved.push(r);
+  }
+
+  // Passe 3 : l'extraction du PDF coupe parfois un mot (« BESANCON ES T », « MONTLUE L »). On recolle
+  // les lettres isolées au mot précédent et on accepte si les deux gares ainsi obtenues sont connues.
+  const repairedNames = new Map<Row, [string, string]>();
+  let skipped = 0;
+  for (const r of unresolved) {
+    const merged = r.head.replace(/(\S) ([A-Z])(?= |$)/g, '$1$2');
+    const n = merged.split(' ').length;
+    const ok: [string, string][] = [];
+    for (let k = 1; k < n; k++) {
+      const [a, b] = split(merged, k);
+      if (vocabulary.has(a) && vocabulary.has(b)) ok.push([a, b]);
+    }
+    if (ok.length === 1) repairedNames.set(r, ok[0] as [string, string]);
     else skipped++;
   }
   if (skipped > 0)
     warnings.push(`${skipped} ligne(s) dont la coupure entrée/sortie est ambiguë ignorée(s).`);
 
-  const pairs: PricePair[] = [];
-  for (const [r, k] of resolved) {
-    const [a, b] = split(r.head, k);
+  const toPair = (r: Row, a: string, b: string): PricePair => {
     const [distance, c1, c2, c3, c4, c5] = r.numbers as [
       number,
       number,
@@ -96,13 +110,20 @@ export function parseAprrText(text: string, concession: 'APRR' | 'AREA' = 'APRR'
       number,
     ];
     const prices: ClassPrices = { 1: c1, 2: c2, 3: c3, 4: c4, 5: c5 };
-    pairs.push({
+    return {
       concession,
       from: gateId(concession, normalizeGateName(a)),
       to: gateId(concession, normalizeGateName(b)),
       distanceKm: distance,
       prices,
-    });
+    };
+  };
+
+  const pairs: PricePair[] = [];
+  for (const [r, k] of resolved) {
+    const [a, b] = split(r.head, k);
+    pairs.push(toPair(r, a, b));
   }
+  for (const [r, [a, b]] of repairedNames) pairs.push(toPair(r, a, b));
   return { pairs, warnings };
 }

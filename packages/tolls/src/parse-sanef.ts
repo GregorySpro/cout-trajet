@@ -16,7 +16,7 @@ const CLASSES = [1, 2, 3, 4, 5] as const;
  * Les sections dont les lignes n'ont pas la bonne longueur (mise en page brouillée) sont rejetées
  * avec un avertissement plutôt que lues de travers.
  */
-export function parseSanefText(text: string): ParseResult {
+export function parseSanefText(text: string, concession: 'SANEF' | 'SAPN' = 'SANEF'): ParseResult {
   const warnings: string[] = [];
   const pages = text.split(/=====PAGE (\d+)=====/);
   // pages = [avant, "1", texte1, "2", texte2, …]
@@ -77,9 +77,9 @@ export function parseSanefText(text: string): ParseResult {
   for (const { from, to, prices } of merged.values()) {
     if (CLASSES.every((c) => prices[c] !== undefined)) {
       pairs.push({
-        concession: 'SANEF',
-        from: gateId('SANEF', from),
-        to: gateId('SANEF', to),
+        concession,
+        from: gateId(concession, from),
+        to: gateId(concession, to),
         distanceKm: null,
         prices: prices as ClassPrices,
       });

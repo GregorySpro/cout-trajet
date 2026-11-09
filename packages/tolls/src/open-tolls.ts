@@ -18,6 +18,8 @@ export interface OpenToll {
   seasons?: Season[];
   /** Origine et date du tarif (traçabilité). */
   source: string;
+  /** Date d'application du tarif (AAAA-MM-JJ) : sert à trancher face à une grille plus ancienne. */
+  effectiveFrom: string;
 }
 
 function monthDay(date: Date): string {
@@ -57,17 +59,20 @@ export const OPEN_TOLLS: readonly OpenToll[] = [
       },
     ],
     source: 'leviaducdemillau.com, tarifs au 1er février 2026 (relevé le 2026-11-09)',
+    effectiveFrom: '2026-02-01',
   },
   {
     gate: 'OUVRAGE:PONT DE NORMANDIE',
     name: 'Pont de Normandie',
     prices: { 1: 6.1, 2: 7.1, 3: 7.6, 4: 15.1, 5: 0 },
     source: 'pontsnormandietancarville.fr, tarifs à partir du 1er mai 2026 (relevé le 2026-11-09)',
+    effectiveFrom: '2026-05-01',
   },
   {
     gate: 'OUVRAGE:PONT DE TANCARVILLE',
     name: 'Pont de Tancarville',
     prices: { 1: 2.9, 2: 3.7, 3: 4.4, 4: 7.5, 5: 0 },
     source: 'pontsnormandietancarville.fr, tarifs à partir du 1er mai 2026 (relevé le 2026-11-09)',
+    effectiveFrom: '2026-05-01',
   },
 ];

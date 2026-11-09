@@ -13,7 +13,16 @@ export {
 export { gateId, normalizeGateName, parseFrenchNumber } from './normalize';
 export { OPEN_TOLLS, openTollPrice, type OpenToll, type Season } from './open-tolls';
 export { parseAprrText } from './parse-aprr';
+export { parseAreaText } from './parse-area';
 export { parseSanefText } from './parse-sanef';
 export { parseVinciCsv } from './parse-vinci';
 export { computeTripTolls, type TripTollContext, type TripTolls } from './trip-tolls';
-export type { ClassPrices, Concession, ParseResult, PricePair } from './types';
+export type {
+  ClassPrices,
+  Concession,
+  ParseResult,
+  PriceConflict,
+  PricePair,
+  PriceSource,
+  Reliability,
+} from './types';

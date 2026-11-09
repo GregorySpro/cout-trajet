@@ -12,6 +12,33 @@ VILLEFRANCHE-LIMAS BELLEVILLE S/SAONE 44,70 4,10 € 6,10 € 8,90 € 12,00 €
 BELLEVILLE S/SAONE VILLEFRANCHE-LIMAS 44,70 4,10 € 6,10 € 8,90 € 12,00 € 2,40 €
 `;
 
+describe('parseAprrText — mots coupés par l’extraction du PDF', () => {
+  // « BESANCON ES T » : la lettre finale est détachée dans le texte extrait.
+  const BROKEN = `
+ALLAINES AUXERRE NORD 160,62 30,10 € 45,50 € 75,30 € 96,70 € 15,60 €
+AUXERRE NORD ALLAINES 160,62 30,10 € 45,50 € 75,30 € 96,70 € 15,60 €
+BESANCON EST AUXERRE NORD 300,00 40,00 € 60,00 € 90,00 € 120,00 € 20,00 €
+AUXERRE NORD BESANCON EST 300,00 40,00 € 60,00 € 90,00 € 120,00 € 20,00 €
+ALLAINES BESANCON ES T 424,04 52,60 € 82,00 € 132,60 € 176,70 € 29,60 €
+BESANCON EST ALLAINES 424,04 52,60 € 82,00 € 132,60 € 176,70 € 29,60 €
+`;
+
+  it('recolle la lettre isolée quand les deux gares sont connues par ailleurs', () => {
+    const { pairs } = parseAprrText(BROKEN);
+    const p = pairs.find((x) => x.from === 'APRR:ALLAINES' && x.to === 'APRR:BESANCON EST');
+    expect(p?.prices[1]).toBe(52.6);
+    expect(pairs.some((x) => x.to.includes('ES T'))).toBe(false);
+  });
+
+  it('ne devine pas quand les gares restent inconnues', () => {
+    const { pairs, warnings } = parseAprrText(
+      'ALLAINES BESANCON ES T 424,04 52,60 € 82,00 € 132,60 € 176,70 € 29,60 €',
+    );
+    expect(pairs).toHaveLength(0);
+    expect(warnings[0]).toContain('ignorée');
+  });
+});
+
 describe('parseAprrText', () => {
   const { pairs, warnings } = parseAprrText(TEXT);
   const find = (from: string, to: string) =>

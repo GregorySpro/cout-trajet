@@ -102,6 +102,23 @@ Pour lever la réserve « validation circulaire », 5 trajets jamais utilisés p
 | Autres sociétés (ATMB, SFTRF, A'Lienor, Alis…) | 143 nommés + 328 sans nom | hors périmètre | — |
 Un nœud « retrouvé » signifie qu'un nom de grille correspond ; cela ne prouve pas que la correspondance est juste (cas Senlis/Chamant).
 
+### Extension des sources et règle de résolution des conflits (2026-11-09)
+
+**Nouvelles sources chargées** : grille **AREA** (955 couples, PDF avec codes de gares), meilleure lecture de la grille **APRR** (21 486 couples au lieu de 20 753 : les mots coupés par l'extraction du PDF, comme « BESANCON ES T », sont recollés quand les deux gares sont connues par ailleurs). Livre de tarifs : **36 405 couples de gares**. Nouveau trajet inconnu validé : **Lyon → Annecy (APRR puis AREA) : 17,70 €, 0 %** (estimation Ulys 17,70 €).
+
+**Règle « valeur la plus récente, puis la plus fiable »** (`TollBook`) : chaque tarif porte sa source (`id`, libellé, date d'application ou de dernière mise à jour, fiabilité `official` > `derived` > `third-party` > `estimate`). Pour un même couple de gares :
+1. même prix → pas de conflit (on garde la source la plus récente pour la traçabilité) ;
+2. prix différents → **la source la plus récente l'emporte** ; à date égale ou inconnue → **la plus fiable** ; sinon la première chargée ;
+3. chaque désaccord est conservé dans `conflicts` (couple, valeurs, règle appliquée) et affiché à la construction du livre.
+Les péages calculés citent leur source (`provenance`, ex. « Grille APRR au 01/02/2026 »). Les ouvrages à tarif fixe portent leur date (`effectiveFrom`) : le tarif des **ponts de Normandie du 1er mai 2026** l'emporte sur une grille de février. Dates retenues : grilles APRR/AREA/Sanef/SAPN au 01/02/2026 ; fichiers Vinci (ASF, Escota, Cofiroute) au **14/10/2026** (date de dernière modification de leur serveur, plus récente que les guides PDF de février et de juin 2026) : ils font foi.
+Résultat du jour : **0 conflit** entre les sources chargées (aucun couple n'est donné par deux sources), la règle est prête pour les prochaines.
+
+**Non chargé, avec la raison**
+- **SAPN (A13, A14, A29)** : seulement 6 couples lus sur la grille ; sa mise en page est un tableau à plusieurs colonnes entrelacées (A29 Nord / A13-A29 Sud / A13) que l'extraction de texte ne restitue pas. Intérêt limité : l'A13 et l'A14 sont en flux libre (portiques absents d'OpenStreetMap).
+- **Barrières « systèmes ouverts » APRR/AREA** : le PDF ne contient que des images (aucun texte extractible). Lecture possible avec un outil d'extraction d'images (Pillow) puis lecture visuelle : accord à demander.
+
+**Couverture après extension** : AREA 131 gares nommées sur 142 retrouvées (92 %) ; APRR 213 sur 260 (82 %) ; les autres réseaux sont inchangés.
+
 **Limites qui restent, par ordre d'importance**
 1. **Péage en flux libre** : l'A13 (Paris–Normandie), l'A14 et la sortie 36 de l'A4 n'ont plus de barrières, remplacées par des portiques ([Sanef](https://www.autoroutes.sanef.com/fr/assistance/flux-libre/ou-se-situe-le-flux-libre)) ; l'A79 est aussi en flux libre. **OpenStreetMap ne répertorie aucun portique** (`highway=toll_gantry` : 0 nœud en France) : ces péages ne sont **pas détectables** par gares. L'API les signale (« km à péage hors des gares ») sans les chiffrer. Il faut les positions des portiques et les tarifs par tronçon (brochure SAPN).
 2. **Grilles manquantes** : AREA (142 gares), SAPN (22) et les barrières « systèmes ouverts » (APRR/AREA) ne sont pas chargées ; les PDF existent mais leur téléchargement est à faire par toi (le serveur refuse les téléchargements automatiques).
