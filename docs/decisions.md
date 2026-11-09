@@ -40,6 +40,11 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - Choix : **0 € strict**. Offres gratuites uniquement ; Render payant exclu (API avec mise en veille assumée).
 - Revoir si : un service indispensable n'a aucune offre gratuite viable → réduire le périmètre plutôt que payer.
 
+## D-014 — 2026-11-09 — Sources externes (provisoire, voir docs/spikes/S1-S2-apis-externes.md)
+- Choix : APIs externes bienvenues tant qu'elles sont gratuites. Routage de base OpenRouteService ; péages HERE Toll Cost (quota ~1 250 calculs/mois) + barème maison en repli ; travaux/fermetures via flux DATEX II Bison Futé (réseau non concédé).
+- Mécanismes : adaptateurs par fournisseur, cache, quota-guard (dégradation au lieu de dépassement payant).
+- Revoir si : HERE exige une carte bancaire ou ne couvre pas la France, ou si les quotas se révèlent trop bas.
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).
