@@ -26,6 +26,7 @@ Variables (voir `.env.example`) : `ORS_API_KEY` (obligatoire), `PORT`, `ALLOWED_
 {
   "origin": { "lon": 2.3522, "lat": 48.8566 },
   "destination": { "lon": 4.8357, "lat": 45.764 },
+  "waypoints": [{ "lon": 3.087, "lat": 45.7772 }],
   "vehicle": { "category": "car", "vehicleKey": "<clé de GET /vehicles>" },
   "fuel": { "product": "e10" },
   "speeds": { "motorwayKmh": 110 },
@@ -35,6 +36,7 @@ Variables (voir `.env.example`) : `ORS_API_KEY` (obligatoire), `PORT`, `ALLOWED_
   "includeGeometry": true
 }
 ```
+- **Escales** : `waypoints` (facultatif, 5 au plus, dans l'ordre de passage). Elles ne coûtent pas de requête de routage en plus : le trajet reste un seul appel, avec et sans péage.
 - **Véhicule** : `category` (`car`, `van`, `motorhome`, `hgv-rigid`, `hgv-articulated`, `motorcycle`), puis soit `vehicleKey` (ADEME), soit `consumption` `{urban, rural, motorway?}` en L/100 km. Pour un camion, tout est facultatif (moyenne CNR par défaut). `dimensions` `{heightM, maxWeightT, axles}` déduisent la classe de péage et, pour un camion, les restrictions envoyées au routage ; `tollClass` force la classe.
 - **Carburant** : `fuel.product` (`gazole`, `e10`, `sp95`, `sp98`, `e85`, `gplc`) → prix moyen national, ou `fuel.priceEurPerL` pour imposer un prix. Par défaut : E10 pour un véhicule ADEME à essence, gazole pour un diesel ou un camion.
 - **Réponse** : `routes` (jusqu'à 2 : `fastest` et `noToll`) avec distance, durée, carburant, péages (gares, tarifs officiels), total, fourchette, tracé simplifié, avertissements ; `comparison` (surcoût, minutes gagnées, coût de l'heure gagnée) ; `fuelPrice` ; `vehicle` ; `warnings`.

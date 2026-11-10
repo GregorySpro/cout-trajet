@@ -109,6 +109,7 @@ const VEHICLES: TableSpec = {
     l100_high: 'numeric',
     l100_extra_high: 'numeric',
     l100_mixed: 'numeric',
+    source: 'text',
   },
 };
 const FUEL: TableSpec = {

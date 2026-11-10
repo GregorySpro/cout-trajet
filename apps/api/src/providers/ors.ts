@@ -37,6 +37,7 @@ function cacheKey(req: RouteRequest): string {
     req.profile,
     req.avoidTolls ? 'notoll' : 'toll',
     `${round4(req.origin.lon)},${round4(req.origin.lat)}`,
+    ...(req.via ?? []).map((p) => `via:${round4(p.lon)},${round4(p.lat)}`),
     `${round4(req.destination.lon)},${round4(req.destination.lat)}`,
     r ? JSON.stringify(r) : '',
   ].join('|');
@@ -68,6 +69,7 @@ export class OpenRouteServiceProvider implements RoutingProvider {
     const body: Record<string, unknown> = {
       coordinates: [
         [request.origin.lon, request.origin.lat],
+        ...(request.via ?? []).map((p) => [p.lon, p.lat]),
         [request.destination.lon, request.destination.lat],
       ],
       instructions: true,

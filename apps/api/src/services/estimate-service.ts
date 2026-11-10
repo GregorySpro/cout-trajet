@@ -8,7 +8,7 @@ import {
   type VehicleConsumption,
 } from '@cout-trajet/cost-engine';
 import type { FuelProduct, VehicleModel } from '@cout-trajet/reference-data';
-import { toVehicleConsumption } from '@cout-trajet/reference-data';
+import { isDetailEstimated, toVehicleConsumption } from '@cout-trajet/reference-data';
 import {
   DEFAULT_TOLL_CLASS,
   isHeavyGoodsVehicle,
@@ -54,6 +54,8 @@ export class ApiError extends Error {
 export interface EstimateRequest {
   origin: Coordinate;
   destination: Coordinate;
+  /** Escales, dans l'ordre de passage. */
+  waypoints?: Coordinate[] | undefined;
   vehicle: {
     category: VehicleCategory;
     vehicleKey?: string | undefined;
@@ -166,6 +168,11 @@ export class EstimateService {
       if (!model) throw new ApiError('Véhicule inconnu.', 404);
     }
     const consumption = model ? toVehicleConsumption(model) : req.vehicle.consumption;
+    if (model && isDetailEstimated(model)) {
+      warnings.push(
+        'La consommation de ce modèle est une moyenne (base européenne) : le détail ville, route et autoroute est estimé, donc moins précis.',
+      );
+    }
     if (!consumption && !heavy) {
       throw new ApiError(
         'Indiquez un véhicule (vehicleKey) ou sa consommation en L/100 km pour cette catégorie.',
@@ -220,6 +227,7 @@ export class EstimateService {
     const base: Omit<RouteRequest, 'avoidTolls'> = {
       origin: req.origin,
       destination: req.destination,
+      ...(req.waypoints && req.waypoints.length > 0 ? { via: req.waypoints } : {}),
       profile,
       ...(restrictions ? { restrictions } : {}),
     };

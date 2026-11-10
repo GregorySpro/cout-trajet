@@ -14,3 +14,10 @@ Thumbs.db
 
 # Documents sources tiers (PDF/CSV), non versionnés
 data-sources/
+
+# Fichiers copiés au build (worker MapLibre)
+apps/web/public/maplibre/
+*.tsbuildinfo
+apps/web/AGENTS.md
+*.tsbuildinfo
+apps/web/AGENTS.md

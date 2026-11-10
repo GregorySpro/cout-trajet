@@ -84,6 +84,12 @@ Format : date — question — options — choix — raison — ce qui ferait re
 - Raison : les gares OSM sont sous licence ODbL et les grilles viennent de documents des concessionnaires ; les garder privées évite de redistribuer une base. Le pooler évite le problème d'IPv6 du plan gratuit.
 - Revoir si : le projet gratuit est mis en pause pour inactivité (prévoir un appel périodique), ou si les limites de stockage gratuit sont atteintes.
 
+## D-021 — 2026-11-10 — Véhicules manquants : compléter l'ADEME avec la base européenne (EEA)
+- Contexte : le jeu ADEME ne contient que 594 versions utilisables (ni Kadjar, ni beaucoup de modèles vendus ces dix dernières années).
+- Choix : importer les immatriculations françaises de la base européenne de surveillance du CO₂ (règlement 2019/631), regroupées par motorisation. Elle ne donne qu'une consommation mixte : le détail ville / route / autoroute est déduit par les rapports médians de l'ADEME et signalé comme estimé. L'ADEME reste prioritaire quand elle couvre le modèle.
+- Raison : couverture bien plus large, gratuite, officielle ; l'estimation du détail est annoncée à l'utilisateur plutôt que présentée comme une mesure.
+- Revoir si : une source donnant les consommations par phase pour tous les modèles devient disponible, ou si les doublons de noms entre sources gênent la recherche.
+
 ## À trancher (après spikes)
 - D-006 : fournisseur de routage + méthode péages (S1/S2).
 - D-007 : fournisseur de tuiles (S6).

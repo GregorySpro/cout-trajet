@@ -38,7 +38,18 @@ export interface VehicleModel {
   co2MixedGPerKm: number | null;
   priceEur: number | null;
   l100: WltpConsumption;
-  source: 'ademe-car-labelling';
+  /**
+   * Origine des données. `ademe-car-labelling` : consommations mesurées par phase du cycle WLTP.
+   * `eea-co2-monitoring` : une seule consommation mixte ; le détail par phase est estimé.
+   */
+  source: VehicleSource;
+}
+
+export type VehicleSource = 'ademe-car-labelling' | 'eea-co2-monitoring';
+
+/** Vrai quand le détail ville / route / autoroute est estimé à partir de la consommation mixte. */
+export function isDetailEstimated(vehicle: Pick<VehicleModel, 'source'>): boolean {
+  return vehicle.source !== 'ademe-car-labelling';
 }
 
 /** Énergies retenues pour le MVP (thermique et hybride non rechargeable). */

@@ -20,6 +20,8 @@ export interface HgvRestrictions {
 export interface RouteRequest {
   origin: Coordinate;
   destination: Coordinate;
+  /** Escales, dans l'ordre de passage (entre le départ et l'arrivée). */
+  via?: Coordinate[];
   profile: RoutingProfile;
   avoidTolls: boolean;
   restrictions?: HgvRestrictions;

@@ -8,6 +8,8 @@ export default tseslint.config(
       '**/dist/**',
       '**/build/**',
       '**/.next/**',
+      'apps/web/public/maplibre/**',
+      '**/next-env.d.ts',
       '**/.vercel/**',
       '**/coverage/**',
       'data-sources/**',

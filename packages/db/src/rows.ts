@@ -97,6 +97,7 @@ export function vehicleColumns(vehicles: readonly VehicleModel[]): Columns {
     l100_high: column(vehicles, (v) => v.l100.high),
     l100_extra_high: column(vehicles, (v) => v.l100.extraHigh),
     l100_mixed: column(vehicles, (v) => v.l100.mixed),
+    source: column(vehicles, (v) => v.source),
   };
 }
 

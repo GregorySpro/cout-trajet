@@ -120,7 +120,7 @@ export function vehiclesFromRows(rows: readonly Row[]): VehicleModel[] {
       extraHigh: reqNum(r['l100_extra_high'], 'l100_extra_high'),
       mixed: num(r['l100_mixed']),
     },
-    source: 'ademe-car-labelling',
+    source: r['source'] === 'eea-co2-monitoring' ? 'eea-co2-monitoring' : 'ademe-car-labelling',
   }));
 }
 

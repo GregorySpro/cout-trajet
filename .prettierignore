@@ -11,3 +11,5 @@ docs
 .env
 .env.*
 !.env.example
+apps/web/public/maplibre
+apps/web/public/maplibre

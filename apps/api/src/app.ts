@@ -1,7 +1,7 @@
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { COST_ENGINE_VERSION, type SpeedProfile } from '@cout-trajet/cost-engine';
-import { FUEL_PRODUCTS, type VehicleModel } from '@cout-trajet/reference-data';
+import { FUEL_PRODUCTS, isDetailEstimated, type VehicleModel } from '@cout-trajet/reference-data';
 import { VEHICLE_CATEGORIES } from '@cout-trajet/shared';
 import { normalizeGateName } from '@cout-trajet/tolls';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -36,6 +36,8 @@ const consumption = z.object({
 const estimateBody = z.object({
   origin: coordinate,
   destination: coordinate,
+  // Escales : 5 au plus (chaque étape allonge le trajet mais ne coûte pas de requête de plus).
+  waypoints: z.array(coordinate).max(5, '5 escales au maximum').default([]),
   vehicle: z
     .object({
       category: z.enum(VEHICLE_CATEGORIES).default('car'),
@@ -89,6 +91,7 @@ function toRequest(body: z.infer<typeof estimateBody>): EstimateRequest {
   return {
     origin: body.origin,
     destination: body.destination,
+    ...(body.waypoints.length > 0 ? { waypoints: body.waypoints } : {}),
     vehicle: stripUndefined(body.vehicle) as EstimateRequest['vehicle'],
     fuel: stripUndefined(body.fuel),
     ...(body.speeds ? { speeds: stripUndefined(body.speeds) as Partial<SpeedProfile> } : {}),
@@ -185,6 +188,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
           fuel: v.fuel,
           hybrid: v.hybrid,
           mixedL100: v.l100.mixed === null ? null : Math.round(v.l100.mixed * 10) / 10,
+          // Vrai pour les modèles de la base européenne : le détail ville / route / autoroute est estimé.
+          detailEstimated: isDetailEstimated(v),
         });
         if (out.length >= limit) break;
       }

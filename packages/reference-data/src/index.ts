@@ -1,12 +1,29 @@
 export {
   importAdemeLines,
+  isDetailEstimated,
   normalizeAdemeLine,
   toVehicleConsumption,
   type AdemeImport,
   type VehicleFuel,
   type VehicleModel,
+  type VehicleSource,
   type WltpConsumption,
 } from './ademe';
+export {
+  CO2_G_PER_LITER,
+  EEA_COLUMNS,
+  EeaAccumulator,
+  PHASE_RATIOS,
+  detectDelimiter,
+  groupEeaRecords,
+  mergeVehicleSources,
+  missingColumns,
+  normalizeEeaRow,
+  splitCsvLine,
+  type EeaRecord,
+  type EeaRow,
+  type MergeReport,
+} from './eea';
 export {
   ADEME_FIELDS,
   fetchAdemeLines,

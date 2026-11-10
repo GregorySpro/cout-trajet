@@ -104,6 +104,19 @@ describe('OpenRouteServiceProvider', () => {
     });
   });
 
+  it('place les escales entre le départ et l’arrivée et les distingue dans le cache', async () => {
+    const calls: Call[] = [];
+    const { provider: p } = provider(makeFetch(() => ({}), calls));
+    await p.route({ ...request, via: [{ lon: 3.1, lat: 47.2 }] });
+    expect(calls[0]?.body['coordinates']).toEqual([
+      [2.3522, 48.8566],
+      [3.1, 47.2],
+      [4.8357, 45.764],
+    ]);
+    await p.route(request); // sans escale : autre trajet, donc autre appel
+    expect(calls).toHaveLength(2);
+  });
+
   it('ne consomme pas le quota pour une requête déjà en cache', async () => {
     const calls: Call[] = [];
     const { provider: p } = provider(makeFetch(() => ({}), calls));

@@ -138,6 +138,28 @@ describe('POST /estimate', () => {
     });
   });
 
+  it('transmet les escales dans l’ordre et en refuse plus de 5', async () => {
+    const { app: a, calls } = await make();
+    const stops = [
+      { lon: 3.0, lat: 47.0 },
+      { lon: 4.0, lat: 46.0 },
+    ];
+    const ok = await a.inject({
+      method: 'POST',
+      url: '/estimate',
+      payload: { ...validBody, waypoints: stops },
+    });
+    expect(ok.statusCode).toBe(200);
+    expect(calls[0]).toMatchObject({ waypoints: stops });
+
+    const tooMany = await a.inject({
+      method: 'POST',
+      url: '/estimate',
+      payload: { ...validBody, waypoints: Array.from({ length: 6 }, () => stops[0]) },
+    });
+    expect(tooMany.statusCode).toBe(400);
+  });
+
   it('accepte la catégorie camion sans consommation', async () => {
     const { app: a, calls } = await make();
     const res = await a.inject({
